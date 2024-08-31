@@ -94,7 +94,7 @@ class RichTextBlock extends ContextBlock
 In your entry template:
 
 ```html
-{% hook 'page-blocks' %}
+{% hook 'blocks' %}
 {% for item in blocks|default %}
   {% include '@content-blocks/' ~ item.handle with item.context %}
 {% endfor %}
