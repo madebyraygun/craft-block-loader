@@ -4,7 +4,6 @@ namespace madebyraygun\blockloader\base;
 
 use Craft;
 use craft\elements\Entry;
-use craft\elements\MatrixBlock;
 use madebyraygun\blockloader\Plugin;
 
 class BlocksProvider
@@ -122,7 +121,7 @@ class BlocksProvider
      */
     private static function getBlockDescriptors(ContextBlock $block, array $matrixBlocks): array
     {
-        return array_map(function(MatrixBlock $matrixBlock) use ($block) {
+        return array_map(function(Entry $matrixBlock) use ($block) {
             return new ContextDescriptor($block, $matrixBlock);
         }, $matrixBlocks);
     }

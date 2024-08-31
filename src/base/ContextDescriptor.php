@@ -2,7 +2,7 @@
 
 namespace madebyraygun\blockloader\base;
 
-use craft\elements\MatrixBlock;
+use craft\elements\Entry;
 
 class ContextDescriptor
 {
@@ -13,7 +13,7 @@ class ContextDescriptor
     public string $blockHandle;
     public array $context;
 
-    public function __construct(ContextBlock $block, MatrixBlock $matrixBlock)
+    public function __construct(ContextBlock $block, Entry $matrixBlock)
     {
         $block = clone $block;
         $context = $block->getContext($matrixBlock);

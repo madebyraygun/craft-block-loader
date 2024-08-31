@@ -5,7 +5,6 @@ namespace madebyraygun\blockloader\base;
 use Craft;
 use craft\elements\Asset;
 use craft\elements\Entry;
-use craft\elements\MatrixBlock;
 use craft\events\ModelEvent;
 use yii\base\Event;
 
@@ -59,11 +58,11 @@ class ContextCache
             ->relatedTo($element)
             ->all();
 
-        $blocks = MatrixBlock::find()
+        $blocks = Entry::find()
             ->relatedTo($element)
             ->all();
 
-        $blockEntries = array_map(function(MatrixBlock $block) {
+        $blockEntries = array_map(function(Entry $block) {
             return $block->owner;
         }, $blocks);
 
