@@ -58,18 +58,9 @@ class ContextCache
             ->relatedTo($element)
             ->all();
 
-        $blocks = Entry::find()
-            ->relatedTo($element)
-            ->all();
-
-        $blockEntries = array_map(function(Entry $block) {
-            return $block->owner;
-        }, $blocks);
-
-        $allEntries = array_merge($entries, $blockEntries);
-
         $cleanedIds = [];
-        foreach ($allEntries as $entry) {
+
+        foreach ($entries as $entry) {
             // skip if entry was already cleaned
             if (in_array($entry->id, $cleanedIds)) {
                 continue;
