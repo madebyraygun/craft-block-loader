@@ -1,7 +1,7 @@
 {
   "name": "madebyraygun/craft-matrix-block-loader",
   "description": "Matrix block loader for Craft CMS",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "craft-plugin",
   "require": {
     "php": ">=8.0.2",
