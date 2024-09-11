@@ -1,12 +1,22 @@
 # Craft Matrix Block Loader
 
-This is a matrix block loader for Craft CMS. Use this plugin in conjunction with the [Craft Component Library](https://github.com/madebyraygun/craft-component-library) to format your matrix block context to work with your component library.
+This is a context loader for Craft CMS matrix blocks. Use this plugin in conjunction with the [Craft Component Library](https://github.com/madebyraygun/craft-component-library) to format your matrix block context to work with your component library.
 
 See a sample implementation in the [Craft Component Library Demo](https://github.com/madebyraygun/craft-component-library-demo) repository.
 
 ## Requirements
 
 This plugin requires Craft CMS 4.0 or later, and PHP 8.0.2 or later.
+
+## Installation
+
+This plugin is not available in the Craft Plugin Store, but is published on Packagist and can be installed with Composer.
+
+From the terminal:
+```
+composer require madebyraygun/craft-block-loader
+php craft plugin/install block-loader
+```
 
 ## Configuration
 
