@@ -1,6 +1,6 @@
-# Craft Matrix Block Loader
+# Craft Block Loader
 
-This is a matrix block loader for Craft CMS. Use this plugin in conjunction with the [Craft Component Library](https://github.com/madebyraygun/craft-component-library) to format your matrix block context to work with your component library.
+This is a context loader for Craft CMS matrix blocks and nested entries. Use this plugin in conjunction with the [Craft Component Library](https://github.com/madebyraygun/craft-component-library) to format your block context to work with your component library.
 
 See a sample implementation in the [Craft Component Library Demo](https://github.com/madebyraygun/craft-component-library-demo) repository.
 
