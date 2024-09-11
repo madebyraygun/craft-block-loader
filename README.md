@@ -8,6 +8,17 @@ See a sample implementation in the [Craft Component Library Demo](https://github
 
 This plugin requires Craft CMS 5.0 or later, and PHP 8.2 or later.
 
+## Installation
+
+This plugin is not available in the Craft Plugin Store, but is published on Packagist and can be installed with Composer. 
+
+From the terminal:
+
+```
+composer require madebyraygun/craft-block-loader
+php craft plugin/install block-loader
+```
+
 ## Configuration
 
 By default, the plugin will initialize all block class definitions from the `craft/modules/blocks` directory. Each block class is paired with a matrix field handle (the default is 'blocks'), and will make the context for any matching blocks on the entry available under the `blocks` global context handle. Hook the `blocks` template hook in your entry template to populate the context.
