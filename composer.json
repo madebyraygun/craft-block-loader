@@ -22,8 +22,8 @@
     "source": "https://github.com/madebyraygun/craft-block-loader"
   },
   "extra": {
-    "handle": "matrix-block-loader",
-    "name": "Matrix Block Loader",
+    "handle": "craft-block-loader",
+    "name": "Block Loader",
     "developer": "Raygun",
     "developerUrl": "https://github.com/madebyraygun",
     "documentationUrl": "https://github.com/madebyraygun/craft-block-loader/blob/dev/README.md"
