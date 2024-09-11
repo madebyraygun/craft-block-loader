@@ -2,7 +2,7 @@
 
 namespace madebyraygun\blockloader\base;
 
-use craft\elements\MatrixBlock;
+use craft\elements\Entry;
 
 class ContextDescriptor
 {
@@ -13,13 +13,13 @@ class ContextDescriptor
     public string $blockHandle;
     public array $context;
 
-    public function __construct(ContextBlock $block, MatrixBlock $matrixBlock)
+    public function __construct(ContextBlock $block, Entry $matrixEntry)
     {
         $block = clone $block;
-        $context = $block->getContext($matrixBlock);
-        $this->matrixId = $matrixBlock->contentId;
-        $this->blockHandle = $matrixBlock->type->handle;
-        $this->order = $matrixBlock->sortOrder;
+        $context = $block->getContext($matrixEntry);
+        $this->matrixId = $matrixEntry->id;
+        $this->blockHandle = $matrixEntry->type->handle;
+        $this->order = $matrixEntry->sortOrder;
         $this->handle = $block->settings->contextHandle;
         $this->cacheable = $block->settings->cacheable;
         $this->context = $context;

@@ -5,7 +5,6 @@ namespace madebyraygun\blockloader\base;
 use Craft;
 use craft\elements\Asset;
 use craft\elements\Entry;
-use craft\elements\MatrixBlock;
 use craft\events\ModelEvent;
 use yii\base\Event;
 
@@ -59,18 +58,9 @@ class ContextCache
             ->relatedTo($element)
             ->all();
 
-        $blocks = MatrixBlock::find()
-            ->relatedTo($element)
-            ->all();
-
-        $blockEntries = array_map(function(MatrixBlock $block) {
-            return $block->owner;
-        }, $blocks);
-
-        $allEntries = array_merge($entries, $blockEntries);
-
         $cleanedIds = [];
-        foreach ($allEntries as $entry) {
+
+        foreach ($entries as $entry) {
             // skip if entry was already cleaned
             if (in_array($entry->id, $cleanedIds)) {
                 continue;

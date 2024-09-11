@@ -7,6 +7,7 @@ use craft\base\Model;
 use craft\base\Plugin as BasePlugin;
 use madebyraygun\blockloader\base\BlocksProvider;
 use madebyraygun\blockloader\models\Settings;
+use madebyraygun\blockloader\base\PluginLogTrait;
 
 /**
  * craft-block-loader Plugin
@@ -21,6 +22,8 @@ class Plugin extends BasePlugin
 
     public string $schemaVersion = '1.0.0';
 
+    use PluginLogTrait;
+
     public function init(): void
     {
         parent::init();
@@ -33,6 +36,8 @@ class Plugin extends BasePlugin
         } else {
             $this->controllerNamespace = 'madebyraygyn\\blockloader\\controllers';
         }
+
+        $this->registerLogger();
 
         Craft::$app->onInit(function() {
             $settings = $this->getSettings();

@@ -3,7 +3,6 @@
 namespace madebyraygun\blockloader\base;
 
 use craft\elements\Entry;
-use craft\elements\MatrixBlock;
 use craft\helpers\StringHelper;
 
 abstract class ContextBlock
@@ -11,7 +10,7 @@ abstract class ContextBlock
     public ContextBlockSettings $settings;
     public Entry $entry;
 
-    abstract public function getContext(MatrixBlock $block): array;
+    abstract public function getContext(Entry $block): array;
 
     protected function onInit(ContextBlockSettings $settings): void
     {
