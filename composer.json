@@ -1,7 +1,7 @@
 {
-  "name": "madebyraygun/craft-matrix-block-loader",
-  "description": "Matrix block loader for Craft CMS",
-  "version": "1.0.1",
+  "name": "madebyraygun/craft-block-loader",
+  "description": "Context loader for Craft CMS Matrix blocks",
+  "version": "1.0.2",
   "type": "craft-plugin",
   "require": {
     "php": ">=8.0.2",
@@ -17,13 +17,13 @@
     }
   },
   "support": {
-    "docs": "https://github.com/madebyraygun/craft-matrix-block-loader/blob/main/README.md",
-    "issues": "https://github.com/madebyraygun/craft-matrix-block-loader/issues",
-    "source": "https://github.com/madebyraygun/craft-matrix-block-loader"
+    "docs": "https://github.com/madebyraygun/craft-block-loader/blob/main/README.md",
+    "issues": "https://github.com/madebyraygun/craft-block-loader/issues",
+    "source": "https://github.com/madebyraygun/craft-block-loader"
   },
   "extra": {
-    "handle": "matrix-block-loader",
-    "name": "Matrix Block Loader",
+    "handle": "block-loader",
+    "name": "Block Loader",
     "developer": "Raygun",
     "developerUrl": "https://github.com/madebyraygun",
     "documentationUrl": "https://github.com/madebyraygun/craft-block-loader/blob/main/README.md"
