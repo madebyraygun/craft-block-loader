@@ -32,12 +32,12 @@ Each block in your matrix field will get a corresponding block class definition 
 ```php
 namespace modules\blocks;
 
-use craft\elements\MatrixBlock;
+use craft\elements\Entry;
 use madebyraygun\blockloader\base\ContextBlock;
 
 class AnchorBlock extends ContextBlock
 {
-    public function getContext(MatrixBlock $block): array
+    public function getContext(Entry $block): array
     {
         return [
             'anchorId' => $block->anchorId,
@@ -58,7 +58,7 @@ More complex examples can extend the `ContextBlockSettings` class to change the 
 ```php
 namespace modules\blocks;
 
-use craft\elements\MatrixBlock;
+use craft\elements\EntryBlock;
 use madebyraygun\blockloader\base\ContextBlock;
 use madebyraygun\blockloader\base\ContextBlockSettings;
 
@@ -73,7 +73,7 @@ class RichTextBlock extends ContextBlock
             ]);
     }
 
-    public function getContext(MatrixBlock $block): array
+    public function getContext(Entry $block): array
     {
         $columnsTable = $block->richTextColumns->all();
         $columns = [];
