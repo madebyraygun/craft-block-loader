@@ -4,7 +4,13 @@ namespace madebyraygun\blockloader\base;
 
 use Craft;
 use craft\elements\Entry;
+use madebyraygun\blockloader\base\ContextBlock;
 use madebyraygun\blockloader\Plugin;
+use madebyraygun\blockloader\base\ContextDescriptor;
+use craft\elements\db\EntryQuery;
+use madebyraygun\blockloader\base\ContextQuery;
+use Illuminate\Support\Collection;
+
 
 class BlocksProvider
 {
@@ -12,31 +18,119 @@ class BlocksProvider
 
     private static $hookName = '';
 
-    private static function setHookName() : void
-    {
-        $settings = Plugin::getInstance()->getSettings();
-        self::$hookName = $settings['hookName'];
-    }
+    private static $blockClasses = [];
 
-    private static function setGlobalContextHandle() : void
-    {
-        $settings = Plugin::getInstance()->getSettings();
-        self::$globalContextHandle = $settings['globalContextHandle'];
-    }
+    private static $settingsMap = [];
+
+    // private static function setHookName() : void
+    // {
+    //     $settings = Plugin::getInstance()->getSettings();
+    //     self::$hookName = $settings['hookName'];
+    // }
+
+    // private static function setGlobalContextHandle() : void
+    // {
+    //     $settings = Plugin::getInstance()->getSettings();
+    //     self::$globalContextHandle = $settings['globalContextHandle'];
+    // }
 
     public static function init(array $blockClasses): void
     {
-        static::setHookName();
+        // static::setHookName();
         ContextCache::attachEventHandlers();
-        Craft::$app->view->hook(static::$hookName, function(array &$context) use ($blockClasses) {
-            $entry = $context['entry'] ?? null;
-            $cachedDescriptors = ContextCache::get($entry);
-            $prototypeBlocks = static::getPrototypeBlocks($entry, $blockClasses);
-            $newDescriptors = static::getNewDescriptors($entry, $prototypeBlocks, $cachedDescriptors);
-            $descriptors = array_merge($newDescriptors, $cachedDescriptors);
-            static::updateCacheIfNeeded($entry, $newDescriptors, $descriptors);
-            static::setBlockDescriptors($context, $descriptors);
-        });
+        static::$blockClasses = $blockClasses;
+        // Craft::dd($settingsMap);
+
+        // Craft::$app->view->hook(static::$hookName, function(array &$context) use ($blockClasses) {
+        //     $entry = $context['entry'] ?? null;
+        //     $cachedDescriptors = ContextCache::get($entry);
+        //     $prototypeBlocks = static::getPrototypeBlocks($entry, $blockClasses);
+        //     $newDescriptors = static::getNewDescriptors($entry, $prototypeBlocks, $cachedDescriptors);
+        //     $descriptors = array_merge($newDescriptors, $cachedDescriptors);
+        //     static::updateCacheIfNeeded($entry, $newDescriptors, $descriptors);
+        //     static::setBlockDescriptors($context, $descriptors);
+        // });
+    }
+
+    public static function extractBlockDescriptors(Entry $entry, string $fieldHandle): array
+    {
+        // get class type of field
+        // if $field instanceof \cked
+        // $fieldType = get_class($field);
+        $contextQuery = new ContextQuery($entry, $fieldHandle, static::$blockClasses);
+        $descriptors = self::queryFieldDescriptors($contextQuery);
+        // if ($fieldType === 'craft\ckeditor\data\FieldData') {
+        //     $items = $field->getChunks(false)->all();
+
+        //     dd($fieldType);
+        // } else if ($fieldType === 'craft\elements\db\EntryQuery') {
+        //     $entries = ContextQuery::queryFieldEntries($field, $blocksSettings);
+        //     $descriptors = [];
+        //     dd($entries);
+        // }
+        return [];
+    }
+
+    public static function queryFieldDescriptors(ContextQuery $contextQuery): array
+    {
+        $descriptors = [];
+        switch ($contextQuery->getFieldClass()) {
+            case 'craft\ckeditor\data\FieldData':
+                return self::getDescriptorsFromCkeditor($contextQuery);
+            case 'craft\elements\db\EntryQuery':
+                return self::getDescriptorsFromEntryQuery($contextQuery);
+            default:
+                return [];
+        }
+    }
+
+
+    public static function getDescriptorsFromCkeditor(ContextQuery $contextQuery): array {
+        $field = $contextQuery->getFieldValue();
+        $chunks = $field->getChunks(false);
+        $wrappedChunks = $chunks->map(fn($chunk, int $idx) => [
+            'order' => $idx,
+            'data' => $chunk,
+            'descriptor' => null
+        ]);
+        $entryChunks = $wrappedChunks->filter(fn($chunk) => $chunk['data']->getType() === 'entry');
+        $entryIds = $entryChunks->map(fn($chunk) => $chunk['data']->entryId);
+        $eagerFields = $contextQuery->eagerFields;
+        $entries = collect(Entry::find()->id($entryIds)->with($eagerFields)->all());
+        foreach($entries as $entry) {
+            $chunk = $entryChunks->first(fn($chunk) => $chunk['data']->entryId === $entry->id);
+            if (!$chunk) {
+                continue;
+            }
+            $entryType = $entry->type->handle;
+            $contextBlock = $contextQuery->getContextBlockForFieldHandle($entryType);
+            if (!$contextBlock) {
+                // No block class found that can handle this entry type
+                continue;
+            }
+            $context = $contextBlock->getContext($entry);
+            $descriptor = new ContextDescriptor(
+                $entry->id,
+                $contextBlock->settings->contextHandle,
+                $chunk['order'],
+                true,
+                $context
+            );
+            $chunk['descriptor'] = $descriptor;
+        }
+        return $wrappedChunks->map(fn($chunk) => $chunk['descriptor'])->filter()->toArray();
+    }
+
+    public static function getDescriptorsFromEntryQuery(ContextQuery $contextQuery): array
+    {
+        $eagerFields = $contextQuery->eagerFields;
+        $field = $contextQuery->getFieldValue();
+        $entries = $field->with($eagerFields)->all();
+        // $descriptors = $entries->map(fn(Entry $entry) => (
+
+        //     new ContextDescriptor($entry->id)
+        // ));
+        return $entries;
     }
 
     /**
@@ -93,7 +187,7 @@ class BlocksProvider
         $result = [];
         $ctxQuery = new ContextQuery($entry, $blocks);
         foreach ($blocks as $block) {
-            $matrixBlocks = $ctxQuery->findMatrixBlocks($block);
+            $matrixBlocks = $ctxQuery->extractBlocks($block);
             $blockDescriptors = static::getBlockDescriptors($block, $matrixBlocks);
             $result = array_merge($blockDescriptors, $result);
         }
@@ -133,7 +227,7 @@ class BlocksProvider
      */
     private static function setBlockDescriptors(array &$context, array $descriptors): void
     {
-        static::setGlobalContextHandle();
+        // static::setGlobalContextHandle();
         // clear empty blocks
         $descriptors = array_filter($descriptors, function($descriptor) {
             return !empty($descriptor);
