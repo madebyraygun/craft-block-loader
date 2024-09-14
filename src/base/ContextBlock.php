@@ -10,9 +10,19 @@ abstract class ContextBlock
     public ?Entry $entry;
     public ContextBlockSettings $settings;
 
-    abstract public function getContext(Entry $block): array;
-    public function setSettings(): void {
-        // configure settings ex. $this->settings->blockHandle()
+    public function getContext(Entry $block): array
+    {
+        return [];
+    }
+
+    public function getMarkupContext(string $markup): string
+    {
+        return $markup;
+    }
+
+    public function setSettings(): void
+    {
+        // $this->settings
     }
 
     public function __construct(Entry $entry = null)

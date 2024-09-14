@@ -52,7 +52,7 @@ class BlocksProvider
         // });
     }
 
-    public static function extractBlockDescriptors(Entry $entry, string $fieldHandle): array
+    public static function extractBlockDescriptors(Entry $entry, string $fieldHandle): Collection
     {
         // get class type of field
         // if $field instanceof \cked
@@ -68,24 +68,22 @@ class BlocksProvider
         //     $descriptors = [];
         //     dd($entries);
         // }
-        return [];
+        return $descriptors;
     }
 
-    public static function queryFieldDescriptors(ContextQuery $contextQuery): array
+    public static function queryFieldDescriptors(ContextQuery $contextQuery): Collection
     {
-        $descriptors = [];
         switch ($contextQuery->getFieldClass()) {
             case 'craft\ckeditor\data\FieldData':
                 return self::getDescriptorsFromCkeditor($contextQuery);
             case 'craft\elements\db\EntryQuery':
                 return self::getDescriptorsFromEntryQuery($contextQuery);
             default:
-                return [];
+                return collect([]);
         }
     }
 
-
-    public static function getDescriptorsFromCkeditor(ContextQuery $contextQuery): array {
+    public static function getDescriptorsFromCkeditor(ContextQuery $contextQuery): Collection {
         $field = $contextQuery->getFieldValue();
         $chunks = $field->getChunks(false);
         $wrappedChunks = $chunks->map(fn($chunk, int $idx) => [
@@ -93,44 +91,91 @@ class BlocksProvider
             'data' => $chunk,
             'descriptor' => null
         ]);
-        $entryChunks = $wrappedChunks->filter(fn($chunk) => $chunk['data']->getType() === 'entry');
-        $entryIds = $entryChunks->map(fn($chunk) => $chunk['data']->entryId);
-        $eagerFields = $contextQuery->eagerFields;
-        $entries = collect(Entry::find()->id($entryIds)->with($eagerFields)->all());
-        foreach($entries as $entry) {
-            $chunk = $entryChunks->first(fn($chunk) => $chunk['data']->entryId === $entry->id);
-            if (!$chunk) {
-                continue;
-            }
-            $entryType = $entry->type->handle;
-            $contextBlock = $contextQuery->getContextBlockForFieldHandle($entryType);
-            if (!$contextBlock) {
-                // No block class found that can handle this entry type
-                continue;
-            }
-            $context = $contextBlock->getContext($entry);
-            $descriptor = new ContextDescriptor(
-                $entry->id,
-                $contextBlock->settings->contextHandle,
-                $chunk['order'],
-                true,
-                $context
-            );
-            $chunk['descriptor'] = $descriptor;
-        }
-        return $wrappedChunks->map(fn($chunk) => $chunk['descriptor'])->filter()->toArray();
+        $entryChunks = self::transformEntryChunks($wrappedChunks, $contextQuery);
+        $markupChunks = self::transformMarkupChunks($wrappedChunks, $contextQuery);
+        return collect($entryChunks->merge($markupChunks))
+            // ->map(fn($chunk) => $chunk['descriptor'])
+            ->pluck('descriptor')
+            ->filter()
+            ->sort(fn($a, $b) => $a->order <=> $b->order)
+            ->values();
     }
 
-    public static function getDescriptorsFromEntryQuery(ContextQuery $contextQuery): array
+    public static function transformEntryChunks(Collection $chunks, ContextQuery $contextQuery): Collection
+    {
+        $entryChunks = $chunks->filter(fn($chunk) => $chunk['data']->getType() === 'entry');
+        $entryIds = $entryChunks->map(fn($chunk) => $chunk['data']->entryId);
+        $eagerFields = $contextQuery->eagerFields;
+        $entries = collect(Entry::find()
+            ->id($entryIds)
+            ->with($eagerFields)
+            ->siteId($contextQuery->entry->siteId)
+            ->all()
+        );
+        return $entryChunks->transform(function($chunk) use ($entries, $contextQuery) {
+            $entry = $entries->first(fn($entry) => $entry->id === $chunk['data']->entryId);
+            if ($entry) {
+                $cls = $contextQuery->findContextBlockClass($entry->type->handle);
+                if (!empty($cls)) {
+                    $contextBlock = new $cls($entry);
+                    $context = $contextBlock->getContext($entry);
+                    $descriptor = new ContextDescriptor(
+                        $contextBlock->settings->contextHandle,
+                        $chunk['order'],
+                        $contextBlock->settings->cacheable,
+                        $context
+                    );
+                    $chunk['descriptor'] = $descriptor;
+                }
+            }
+            return $chunk;
+        });
+    }
+
+    public static function transformMarkupChunks(Collection $chunks, ContextQuery $contextQuery): Collection
+    {
+        return $chunks
+        ->filter(fn($chunk) => $chunk['data']->getType() === 'markup')
+        ->transform(function($chunk) use ($contextQuery) {
+            // generate a default context for the markup
+            $context = [ 'content' => $chunk['data']->getHtml() ];
+            // try find if there is class to handle this field
+            $cls = $contextQuery->findContextBlockClass('markup');
+            if ($cls) {
+                $contextBlock = new $cls($contextQuery->entry);
+                $context = $contextBlock->getMarkupContext($chunk['data']);
+            }
+            $descriptor = new ContextDescriptor('markup', $chunk['order'], true, $context);
+            $chunk['descriptor'] = $descriptor;
+            return $chunk;
+        });
+    }
+
+    public static function getDescriptorsFromEntryQuery(ContextQuery $contextQuery): Collection
     {
         $eagerFields = $contextQuery->eagerFields;
         $field = $contextQuery->getFieldValue();
-        $entries = $field->with($eagerFields)->all();
-        // $descriptors = $entries->map(fn(Entry $entry) => (
+        $entries = $field
+            ->with($eagerFields)
+            ->siteId($contextQuery->entry->siteId)
+            ->all();
 
-        //     new ContextDescriptor($entry->id)
-        // ));
-        return $entries;
+        return collect($entries)->transform(function($entry) use ($contextQuery) {
+            $entryType = $entry->type->handle;
+            $cls = $contextQuery->findContextBlockClass($entryType);
+            if (!empty($cls)) {
+                $contextBlock = new $cls($entry);
+                $context = $contextBlock->getContext($entry);
+                return new ContextDescriptor(
+                    $contextBlock->settings->contextHandle,
+                    $entry->sortOrder,
+                    $contextBlock->settings->cacheable,
+                    $context
+                );
+            }
+        })
+        ->sort(fn($a, $b) => $a->order <=> $b->order)
+        ->values();
     }
 
     /**

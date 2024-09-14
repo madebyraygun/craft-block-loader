@@ -34,13 +34,13 @@ class ContextQuery
         return get_class($this->getFieldValue());
     }
 
-    public function getContextBlockForFieldHandle(string $handle): ContextBlock|null {
+    public function findContextBlockClass(string $handle): string|null {
         $settings = $this->settingsCollection->firstWhere('settings.blockHandle', $handle);
         if (!$settings) {
             return null;
         }
-        $blockClass = $settings['class'];
-        return new $blockClass($this->entry);
+        return $settings['class'];
+        // return new $blockClass($this->entry);
     }
 
     private function mapBlocksSettings(array $blockClasses): Collection {
