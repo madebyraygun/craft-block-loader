@@ -42,11 +42,4 @@ abstract class ContextBlock
         $className = $ref->getShortName();
         return str_replace('Block', '', $className);
     }
-
-    // public function __clone()
-    // {
-    //     $oldSettings = $this->settings;
-    //     $this->settings = new ContextBlockSettings();
-    //     $this->settings->copy($oldSettings);
-    // }
 }
