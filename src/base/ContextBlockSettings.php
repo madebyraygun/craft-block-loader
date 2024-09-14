@@ -20,8 +20,8 @@ class ContextBlockSettings
     }
 
     /**
-     * Set the block handle.
-     * This should match the handle for the block type inside the matrix field.
+     * Set the field handle.
+     * This should match the handle for the entry field ($entry->type->handle).
      * @param string $fieldHandle
      * @return self
      */
@@ -32,8 +32,8 @@ class ContextBlockSettings
     }
 
     /**
-     * Set the context handle for the block.
-     * This is the handle used to access the block in the template.
+     * Set the block handle.
+     * This is the handle used to id the block in the template.
      * @param string $blockHandle
      * @return self
      */
