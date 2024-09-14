@@ -9,10 +9,11 @@ use Illuminate\Support\Collection;
 
 class BlocksLoader extends Behavior
 {
-    public function blocksFromField($field): Collection
+    public function blocksFromField(string $fieldHandle): Collection
     {
-        $fields = collect($this->owner->fieldValues);
-        $fieldHandle = $fields->search($field, true);
+        if (!$this->owner->getFieldValue($fieldHandle)) {
+            return collect([]);
+        }
         return BlocksProvider::extractBlockDescriptors($this->owner, $fieldHandle);
     }
 }
