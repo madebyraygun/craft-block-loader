@@ -30,8 +30,8 @@ abstract class ContextBlock
         $handle = $this->getDefaultHandle();
         $this->entry = $entry;
         $this->settings = (new ContextBlockSettings())
-            ->blockHandle(lcfirst($handle))
-            ->contextHandle(StringHelper::toKebabCase($handle))
+            ->fieldHandle(lcfirst($handle))
+            ->blockHandle(StringHelper::toKebabCase($handle))
             ->cacheable(true);
         $this->setSettings();
     }

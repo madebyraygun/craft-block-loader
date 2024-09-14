@@ -4,13 +4,9 @@ namespace madebyraygun\blockloader\base;
 
 use Craft;
 use craft\elements\Entry;
-use madebyraygun\blockloader\base\ContextBlock;
-use madebyraygun\blockloader\Plugin;
 use madebyraygun\blockloader\base\ContextDescriptor;
-use craft\elements\db\EntryQuery;
 use madebyraygun\blockloader\base\ContextQuery;
 use Illuminate\Support\Collection;
-
 
 class BlocksProvider
 {
@@ -18,12 +14,12 @@ class BlocksProvider
 
     public static function init(array $blockClasses): void
     {
-        // static::setHookName();
         ContextCache::attachEventHandlers();
         static::$blockClasses = $blockClasses;
-        // Craft::dd($settingsMap);
+    }
 
-        // Craft::$app->view->hook(static::$hookName, function(array &$context) use ($blockClasses) {
+    public static function extractBlockDescriptors(Entry $entry, string $fieldHandle): Collection
+    {
         //     $entry = $context['entry'] ?? null;
         //     $cachedDescriptors = ContextCache::get($entry);
         //     $prototypeBlocks = static::getPrototypeBlocks($entry, $blockClasses);
@@ -31,11 +27,6 @@ class BlocksProvider
         //     $descriptors = array_merge($newDescriptors, $cachedDescriptors);
         //     static::updateCacheIfNeeded($entry, $newDescriptors, $descriptors);
         //     static::setBlockDescriptors($context, $descriptors);
-        // });
-    }
-
-    public static function extractBlockDescriptors(Entry $entry, string $fieldHandle): Collection
-    {
         $contextQuery = new ContextQuery($entry, $fieldHandle, static::$blockClasses);
         //$cachedDescriptors = ContextCache::get($entry);
         // filter out cached descriptors
@@ -93,7 +84,7 @@ class BlocksProvider
                     $contextBlock = new $cls($entry);
                     $context = $contextBlock->getContext($entry);
                     $descriptor = new ContextDescriptor(
-                        $contextBlock->settings->contextHandle,
+                        $contextBlock->settings->blockHandle,
                         $chunk['order'],
                         $contextBlock->settings->cacheable,
                         $context
@@ -140,7 +131,7 @@ class BlocksProvider
                 $contextBlock = new $cls($entry);
                 $context = $contextBlock->getContext($entry);
                 return new ContextDescriptor(
-                    $contextBlock->settings->contextHandle,
+                    $contextBlock->settings->blockHandle,
                     $entry->sortOrder,
                     $contextBlock->settings->cacheable,
                     $context
@@ -176,7 +167,7 @@ class BlocksProvider
         $result = $blocks;
         foreach ($descriptors as $descriptor) {
             $result = array_filter($result, function($block) use ($descriptor) {
-                return $block->settings->blockHandle !== $descriptor->blockHandle;
+                return $block->settings->fieldHandle !== $descriptor->fieldHandle;
             });
         }
         return $result;

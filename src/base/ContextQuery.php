@@ -32,7 +32,7 @@ class ContextQuery
     }
 
     public function findContextBlockClass(string $handle): string|null {
-        $settings = $this->settingsCollection->firstWhere('settings.blockHandle', $handle);
+        $settings = $this->settingsCollection->firstWhere('settings.fieldHandle', $handle);
         if (!$settings) {
             return null;
         }
@@ -56,11 +56,10 @@ class ContextQuery
     private function getEagerFields(ContextBlockSettings $settings)
     {
         $fields = [];
-        // $matrixHandle = $settings->matrixHandle;
-        $blockHandle = $settings->blockHandle;
+        $fieldHandle = $settings->fieldHandle;
         foreach ($settings->eagerFields as $field) {
             $name = is_array($field) ? $field[0] ?? '' : $field;
-            $prefixedField = $this->fieldHandle . '.' . $blockHandle . ':' . $name;
+            $prefixedField = $this->fieldHandle . '.' . $fieldHandle . ':' . $name;
             if (is_array($field)) {
                 // handle array fields with custom params
                 $prefixedField = [$prefixedField, ...array_slice($field, 1)];

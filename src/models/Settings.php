@@ -9,12 +9,6 @@ class Settings extends Model
 {
     public string $blocksPath = '';
 
-    public string $matrixHandle = 'blocks';
-
-    public string $hookName = 'blocks';
-
-    public string $globalContextHandle = 'blocks';
-
     // set defaults
     public function init(): void
     {
@@ -27,13 +21,7 @@ class Settings extends Model
     {
         return [
             ['blocksPath', 'required'],
-            ['blocksPath', 'string'],
-            ['matrixHandle', 'required'],
-            ['matrixHandle', 'string'],
-            ['hookName', 'required'],
-            ['hookName', 'string'],
-            ['globalContextHandle', 'required'],
-            ['globalContextHandle', 'string'],
+            ['blocksPath', 'string']
         ];
     }
 }
