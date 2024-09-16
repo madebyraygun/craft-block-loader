@@ -69,7 +69,7 @@ More complex examples can extend the `ContextBlockSettings` class to change the 
 ```php
 namespace modules\blocks;
 
-use craft\elements\EntryBlock;
+use craft\elements\Entry;
 use madebyraygun\blockloader\base\ContextBlock;
 use madebyraygun\blockloader\base\ContextBlockSettings;
 
