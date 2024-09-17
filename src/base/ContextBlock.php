@@ -38,6 +38,12 @@ abstract class ContextBlock
         return [ 'content' => $markup ];
     }
 
+    public function setEntry(Entry $entry): ContextBlock
+    {
+        $this->entry = $entry;
+        return $this;
+    }
+
     public function setSettings(): void
     {
         // $this->settings

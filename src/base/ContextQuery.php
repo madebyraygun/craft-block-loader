@@ -9,16 +9,12 @@ class ContextQuery
 {
     public Entry $entry;
     public string $fieldHandle;
-    public array $blockClasses;
     public array $eagerFields;
-    private Collection $contextSettings;
 
-    public function __construct(Entry $entry, string $fieldHandle, array $blockClasses)
+    public function __construct(Entry $entry, string $fieldHandle)
     {
         $this->entry = $entry;
         $this->fieldHandle = $fieldHandle;
-        $this->blockClasses = $blockClasses;
-        $this->contextSettings = $this->mapSettings($blockClasses);
         $this->eagerFields = $this->mapEagerFields();
     }
 
@@ -28,11 +24,6 @@ class ContextQuery
 
     public function getFieldClass(): string {
         return get_class($this->getFieldValue());
-    }
-
-    public function findContextBlockClass(string $handle): ?string {
-        $settings = $this->contextSettings->firstWhere('settings.fieldHandle', $handle);
-        return $settings['class'] ?? null;
     }
 
     public function queryDescriptors(): Collection
@@ -45,20 +36,6 @@ class ContextQuery
             default:
                 return collect([]);
         }
-    }
-
-    private function mapSettings(array $blockClasses): Collection {
-        $result = collect([]);
-        foreach ($blockClasses as $blockClass) {
-            if (is_subclass_of($blockClass, ContextBlock::class)) {
-                $ctxBlock = new $blockClass;
-                $result->push([
-                    'class' => $blockClass,
-                    'settings' => $ctxBlock->settings
-                ]);
-            }
-        }
-        return $result;
     }
 
     private function getDescriptorsFromCkeditor(): Collection {
@@ -92,9 +69,8 @@ class ContextQuery
         return $entryChunks->transform(function($chunk) use ($entries) {
             $entry = $entries->first(fn($entry) => $entry->id === $chunk['data']->entryId);
             if ($entry) {
-                $cls = $this->findContextBlockClass($entry->type->handle);
+                $contextBlock = BlocksFactory::createFromEntry($entry);
                 if (!empty($cls)) {
-                    $contextBlock = new $cls($entry);
                     $context = $contextBlock->getContext($entry);
                     $descriptor = new ContextDescriptor(
                         $contextBlock->settings->blockHandle,
@@ -117,9 +93,9 @@ class ContextQuery
             // generate a default context for the markup
             $context = [ 'content' => $chunk['data']->getHtml() ];
             // try find if there is class to handle this field
-            $cls = $this->findContextBlockClass('markup');
-            if ($cls) {
-                $contextBlock = new $cls($this->entry);
+            $contextBlock = BlocksFactory::create('markup');
+            if ($contextBlock) {
+                $contextBlock->setEntry($this->entry);
                 $context = $contextBlock->getMarkupContext($chunk['data']);
             }
             $descriptor = new ContextDescriptor('markup', $chunk['order'], true, $context);
@@ -138,10 +114,8 @@ class ContextQuery
             ->all();
 
         return collect($entries)->transform(function($entry) {
-            $entryType = $entry->type->handle;
-            $cls = $this->findContextBlockClass($entryType);
-            if (!empty($cls)) {
-                $contextBlock = new $cls($entry);
+            $contextBlock = BlocksFactory::createFromEntry($entry);
+            if (!empty($contextBlock)) {
                 $context = $contextBlock->getContext($entry);
                 return new ContextDescriptor(
                     $contextBlock->settings->blockHandle,
@@ -173,7 +147,7 @@ class ContextQuery
 
     private function mapEagerFields(): array
     {
-        return $this->contextSettings
+        return BlocksFactory::getContextSettings()
             ->pluck('settings')
             ->map(fn(ContextBlockSettings $s) => $this->getEagerFields($s))
             ->flatten()

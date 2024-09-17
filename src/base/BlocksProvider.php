@@ -4,18 +4,16 @@ namespace madebyraygun\blockloader\base;
 
 use Craft;
 use craft\elements\Entry;
-use madebyraygun\blockloader\base\ContextDescriptor;
 use madebyraygun\blockloader\base\ContextQuery;
+use madebyraygun\blockloader\base\BlocksFactory;
 use Illuminate\Support\Collection;
 
 class BlocksProvider
 {
-    private static $blockClasses = [];
-
     public static function init(array $blockClasses): void
     {
         ContextCache::attachEventHandlers();
-        static::$blockClasses = $blockClasses;
+        BlocksFactory::init($blockClasses);
     }
 
     public static function extractBlockDescriptors(Entry $entry, string $fieldHandle): Collection
@@ -27,7 +25,7 @@ class BlocksProvider
         //     $descriptors = array_merge($newDescriptors, $cachedDescriptors);
         //     static::updateCacheIfNeeded($entry, $newDescriptors, $descriptors);
         //     static::setBlockDescriptors($context, $descriptors);
-        $contextQuery = new ContextQuery($entry, $fieldHandle, static::$blockClasses);
+        $contextQuery = new ContextQuery($entry, $fieldHandle);
         //$cachedDescriptors = ContextCache::get($entry);
         // filter out cached descriptors
         $descriptors = $contextQuery->queryDescriptors();
