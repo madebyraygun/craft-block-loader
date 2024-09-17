@@ -26,19 +26,25 @@ class ContextQuery
         return get_class($this->getFieldValue());
     }
 
-    public function queryDescriptors(): Collection
+    public function queryDescriptors(Collection $cachedDescriptors): Collection
     {
+        $result = [];
         switch ($this->getFieldClass()) {
             case 'craft\ckeditor\data\FieldData':
-                return self::getDescriptorsFromCkeditor();
+                $result = self::getDescriptorsFromCkeditor($cachedDescriptors);
+                break;
             case 'craft\elements\db\EntryQuery':
-                return self::getDescriptorsFromEntryQuery();
+                $result = self::getDescriptorsFromEntryQuery($cachedDescriptors);
+                break;
             default:
-                return collect([]);
+                $result =  collect([]);
         }
+        return $result
+            ->sort(fn($a, $b) => $a->order <=> $b->order)
+            ->values();
     }
 
-    private function getDescriptorsFromCkeditor(): Collection {
+    private function getDescriptorsFromCkeditor(Collection $cachedDescriptors): Collection {
         $field = $this->getFieldValue();
         $chunks = $field->getChunks(false);
         $wrappedChunks = $chunks->map(fn($chunk, int $idx) => [
@@ -50,9 +56,7 @@ class ContextQuery
         $markupChunks = self::transformMarkupChunks($wrappedChunks);
         return collect($entryChunks->merge($markupChunks))
             ->pluck('descriptor')
-            ->filter()
-            ->sort(fn($a, $b) => $a->order <=> $b->order)
-            ->values();
+            ->filter();
     }
 
     private function transformEntryChunks(Collection $chunks): Collection
@@ -73,6 +77,7 @@ class ContextQuery
                 if (!empty($cls)) {
                     $context = $contextBlock->getContext($entry);
                     $descriptor = new ContextDescriptor(
+                        $entry->id,
                         $contextBlock->settings->blockHandle,
                         $chunk['order'],
                         $contextBlock->settings->cacheable,
@@ -104,7 +109,7 @@ class ContextQuery
         });
     }
 
-    private function getDescriptorsFromEntryQuery(): Collection
+    private function getDescriptorsFromEntryQuery(Collection $cachedDescriptors): Collection
     {
         $eagerFields = $this->eagerFields;
         $field = $this->getFieldValue();
@@ -118,15 +123,14 @@ class ContextQuery
             if (!empty($contextBlock)) {
                 $context = $contextBlock->getContext($entry);
                 return new ContextDescriptor(
+                    $entry->id,
                     $contextBlock->settings->blockHandle,
                     $entry->sortOrder,
                     $contextBlock->settings->cacheable,
                     $context
                 );
             }
-        })
-        ->sort(fn($a, $b) => $a->order <=> $b->order)
-        ->values();
+        });
     }
 
     private function getEagerFields(ContextBlockSettings $settings)

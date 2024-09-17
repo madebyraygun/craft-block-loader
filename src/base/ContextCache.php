@@ -6,6 +6,7 @@ use Craft;
 use craft\elements\Asset;
 use craft\elements\Entry;
 use craft\events\ModelEvent;
+use Illuminate\Support\Collection;
 use yii\base\Event;
 
 class ContextCache
@@ -17,26 +18,26 @@ class ContextCache
         return "page_blocks_$entry->id";
     }
 
-    public static function set(Entry $entry, array $blockDescriptors): void
+    public static function set(Entry $entry, Collection $descriptors): void
     {
         if (Craft::$app->request->isPreview) {
             return;
         }
         $key = static::getKey($entry);
-        $blockDescriptors = static::filterCacheableDescriptors($blockDescriptors);
-        Craft::$app->cache->set($key, serialize($blockDescriptors));
+        $descriptors = static::filterCacheableDescriptors($descriptors);
+        Craft::$app->cache->set($key, serialize($descriptors->toArray()));
     }
 
-    public static function get(Entry $entry): array|null
+    public static function get(Entry $entry): ?Collection
     {
         if (!Craft::$app->request->isPreview && static::$CACHE === null) {
             $key = static::getKey($entry);
             $content = Craft::$app->cache->get($key);
             if (!empty($content)) {
-                static::$CACHE = unserialize($content);
+                static::$CACHE = collect(unserialize($content));
             }
         }
-        return static::$CACHE ?? [];
+        return static::$CACHE;
     }
 
     public static function clear(Entry $entry): void
@@ -45,11 +46,9 @@ class ContextCache
         Craft::$app->cache->delete($key);
     }
 
-    public static function filterCacheableDescriptors(array $descriptors): array
+    public static function filterCacheableDescriptors(Collection $descriptors): Collection
     {
-        return array_filter($descriptors, function(ContextDescriptor $descriptor) {
-            return $descriptor->cacheable;
-        });
+        return $descriptors->filter(fn($descriptor) => $descriptor->cacheable);
     }
 
     private static function clearRelations(mixed $element): void
