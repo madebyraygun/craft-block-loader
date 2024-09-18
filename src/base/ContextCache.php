@@ -24,7 +24,7 @@ class ContextCache
             return;
         }
         $key = static::getKey($entry);
-        $descriptors = static::filterCacheableDescriptors($descriptors);
+        // $descriptors = static::filterCacheableDescriptors($descriptors);
         Craft::$app->cache->set($key, serialize($descriptors->toArray()));
     }
 

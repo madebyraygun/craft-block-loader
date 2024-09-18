@@ -18,10 +18,17 @@ class BlocksProvider
 
     public static function extractBlockDescriptors(Entry $entry, string $fieldHandle): Collection
     {
-        $cachedDescriptors = ContextCache::get($entry);
+        $cachedDescriptors = ContextCache::get($entry) ?? collect([]);
+        $fieldDescriptors = $cachedDescriptors->filter(fn($d) => $d->fieldHandle === $fieldHandle);
+        $cachedDescriptors = $cachedDescriptors->filter(fn($d) => $d->fieldHandle !== $fieldHandle);
+
         $contextQuery = new ContextQuery($entry, $fieldHandle);
-        $descriptors = $contextQuery->queryDescriptors($cachedDescriptors);
-        ContextCache::set($entry, $descriptors);
-        return $descriptors;
+        $contextQuery->setCachedDescriptors($fieldDescriptors);
+        $fieldDescriptors = $contextQuery->queryDescriptors();
+
+        $newFieldDescriptors = $fieldDescriptors->filter(fn($d) => $d->cacheable === true);
+        $cachedDescriptors = $cachedDescriptors->merge($newFieldDescriptors);
+        ContextCache::set($entry, $cachedDescriptors);
+        return $fieldDescriptors;
     }
 }

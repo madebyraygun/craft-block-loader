@@ -7,7 +7,9 @@ use craft\base\Model;
 use craft\base\Plugin as BasePlugin;
 use craft\events\DefineBehaviorsEvent;
 use craft\elements\Entry;
+// use craft\events\RegisterCacheOptionsEvent;
 use yii\base\Event;
+// use craft\utilities\ClearCaches;
 use madebyraygun\blockloader\base\BlocksProvider;
 use madebyraygun\blockloader\base\PluginLogTrait;
 use madebyraygun\blockloader\models\Settings;
@@ -42,6 +44,23 @@ class Plugin extends BasePlugin
         }
 
         $this->registerLogger();
+
+        // Event::on(
+        //     ClearCaches::class,
+        //     ClearCaches::EVENT_REGISTER_CACHE_OPTIONS,
+        //     function(RegisterCacheOptionsEvent $event) {
+        //         $event->options[] = [
+        //             'key' => 'block-loader',
+        //             'label' => 'Blocks Data',
+        //             'action' => function() {
+        //                 $cache = Craft::$app->get('cache', false);
+        //                 if ($cache) {
+        //                     $cache->flush();
+        //                 }
+        //             }
+        //         ];
+        //     }
+        // );
 
         Event::on(
             Entry::class,
