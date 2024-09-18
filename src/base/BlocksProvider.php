@@ -10,6 +10,8 @@ use Illuminate\Support\Collection;
 
 class BlocksProvider
 {
+    private static $cache = null;
+
     public static function init(array $blockClasses): void
     {
         ContextCache::attachEventHandlers();
@@ -18,17 +20,26 @@ class BlocksProvider
 
     public static function extractBlockDescriptors(Entry $entry, string $fieldHandle): Collection
     {
-        $cachedDescriptors = ContextCache::get($entry) ?? collect([]);
-        $fieldDescriptors = $cachedDescriptors->filter(fn($d) => $d->fieldHandle === $fieldHandle);
-        $cachedDescriptors = $cachedDescriptors->filter(fn($d) => $d->fieldHandle !== $fieldHandle);
-
+        $result = collect([]);
+        $fieldDescriptors = self::getCachedDescriptors($entry, $fieldHandle);
         $contextQuery = new ContextQuery($entry, $fieldHandle);
         $contextQuery->setCachedDescriptors($fieldDescriptors);
-        $fieldDescriptors = $contextQuery->queryDescriptors();
+        $result = $contextQuery->queryDescriptors();
+        self::updateCacheDescriptors($entry, $fieldHandle, $result);
+        return $result;
+    }
 
-        $newFieldDescriptors = $fieldDescriptors->filter(fn($d) => $d->cacheable === true);
-        $cachedDescriptors = $cachedDescriptors->merge($newFieldDescriptors);
+    private static function getCachedDescriptors(Entry $entry, string $fieldHandle): Collection
+    {
+        self::$cache = ContextCache::get($entry) ?? collect([]);
+        return self::$cache->filter(fn($d) => $d->fieldHandle === $fieldHandle);
+    }
+
+    private static function updateCacheDescriptors(Entry $entry, string $fieldHandle, Collection $descriptors): void
+    {
+        $descriptors = $descriptors->filter(fn($d) => $d->fieldHandle !== $fieldHandle);
+        $cachedDescriptors = self::$cache->merge($descriptors);
         ContextCache::set($entry, $cachedDescriptors);
-        return $fieldDescriptors;
+        self::$cache = null;
     }
 }
