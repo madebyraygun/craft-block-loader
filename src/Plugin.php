@@ -3,17 +3,15 @@
 namespace madebyraygun\blockloader;
 
 use Craft;
+use yii\base\Event;
 use craft\base\Model;
 use craft\base\Plugin as BasePlugin;
 use craft\events\DefineBehaviorsEvent;
 use craft\elements\Entry;
-// use craft\events\RegisterCacheOptionsEvent;
-use yii\base\Event;
-// use craft\utilities\ClearCaches;
+use madebyraygun\blockloader\behaviors\BlocksLoaderBehavior;
 use madebyraygun\blockloader\base\BlocksProvider;
 use madebyraygun\blockloader\base\PluginLogTrait;
 use madebyraygun\blockloader\models\Settings;
-use madebyraygun\blockloader\web\twig\BlocksLoader;
 
 /**
  * craft-block-loader Plugin
@@ -45,28 +43,11 @@ class Plugin extends BasePlugin
 
         $this->registerLogger();
 
-        // Event::on(
-        //     ClearCaches::class,
-        //     ClearCaches::EVENT_REGISTER_CACHE_OPTIONS,
-        //     function(RegisterCacheOptionsEvent $event) {
-        //         $event->options[] = [
-        //             'key' => 'block-loader',
-        //             'label' => 'Blocks Data',
-        //             'action' => function() {
-        //                 $cache = Craft::$app->get('cache', false);
-        //                 if ($cache) {
-        //                     $cache->flush();
-        //                 }
-        //             }
-        //         ];
-        //     }
-        // );
-
         Event::on(
             Entry::class,
             Entry::EVENT_DEFINE_BEHAVIORS,
             function(DefineBehaviorsEvent $event) {
-                $event->behaviors['blocksloader'] = BlocksLoader::class;
+                $event->behaviors['blocksloader'] = BlocksLoaderBehavior::class;
             });
 
         Craft::$app->onInit(function() {

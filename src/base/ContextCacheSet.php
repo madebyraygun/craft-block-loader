@@ -61,7 +61,6 @@ class ContextCacheSet
         if (!$this->dirty) {
             return;
         }
-        Craft::dump('writing cache');
         $this->cache->put($this->fieldHandle, $this->descriptors);
         ContextCache::set($this->entry, $this->cache);
         $this->dirty = false;
