@@ -117,7 +117,7 @@ class ContextQuery
     {
         $field = $this->getFieldValue();
         $entries = $this->queryEntries($field);
-        $descriptors = $entries->transform(function($entry) {
+        $descriptors = $entries->map(function($entry) {
             $contextBlock = BlocksFactory::createFromEntry($entry);
             if (!empty($contextBlock)) {
                 $context = $contextBlock->getContext($entry);
@@ -142,6 +142,9 @@ class ContextQuery
             // switch rule to include only by Ids
             // remove from IncludeIds what is in excludes (cache)
             $idParam = array_filter($includeIds, fn($id) => !in_array(strval($id), $excludes));
+            if (empty($idParam)) {
+                return collect([]);
+            }
         }
         return collect($query
             ->id($idParam)
