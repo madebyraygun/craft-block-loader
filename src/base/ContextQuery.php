@@ -11,14 +11,14 @@ class ContextQuery
     public Entry $entry;
     public string $fieldHandle;
     public array $eagerFields;
-    public Collection $cachedDescriptors;
+    public ?ContextCacheSet $cacheSet;
 
     public function __construct(Entry $entry, string $fieldHandle)
     {
         $this->entry = $entry;
         $this->fieldHandle = $fieldHandle;
         $this->eagerFields = $this->mapEagerFields();
-        $this->cachedDescriptors = collect([]);
+        $this->cacheSet = null;
     }
 
     public function getFieldValue(): mixed {
@@ -29,9 +29,9 @@ class ContextQuery
         return get_class($this->getFieldValue());
     }
 
-    public function setCachedDescriptors(Collection $descriptors): void {
+    public function setContextCache(ContextCacheSet $cacheSet): void {
         //TODO: if settings in the controllers have changed, we may need to reset the cache
-        $this->cachedDescriptors = $descriptors;
+        $this->cacheSet = $cacheSet;
     }
 
     public function queryDescriptors(): Collection
@@ -47,9 +47,8 @@ class ContextQuery
             default:
                 $result =  collect([]);
         }
-        $newCache = $this->cachedDescriptors->filter(fn($d) => !$result->contains('id', $d->id));
-        $result = $result->merge($newCache);
         return $result
+            ->merge($this->cacheSet->all())
             ->sort(fn($a, $b) => $a->order <=> $b->order)
             ->values();
     }
@@ -59,8 +58,7 @@ class ContextQuery
         $chunks = $field->getChunks(false);
         $wrappedChunks = $chunks->map(fn($chunk, int $idx) => [
             'order' => $idx,
-            'data' => $chunk,
-            'descriptor' => null
+            'data' => $chunk
         ]);
         $entryChunks = self::transformEntryChunks($wrappedChunks);
         $markupChunks = self::transformMarkupChunks($wrappedChunks);
@@ -87,15 +85,14 @@ class ContextQuery
                 );
             }
         });
-        $this->cachedDescriptors = $this->cachedDescriptors->filter(fn($d) => !$descriptors->contains('id', $d->id));
-        return $descriptors->merge($this->cachedDescriptors);
+        return $descriptors;
     }
 
     private function transformMarkupChunks(Collection $chunks): Collection
     {
         $chunks = $chunks->filter(fn($chunk) => $chunk['data']->getType() === 'markup');
         // remove cached chunks
-        $chunks = $chunks->filter(fn($chunk) => !$this->cachedDescriptors->contains('id', 'markup:' . $chunk['order']));
+        $chunks = $chunks->filter(fn($chunk) => !$this->cacheSet->hasId('markup:' . $chunk['order']));
         $descriptors = $chunks->map(function($chunk) {
             // generate a default context for the markup
             $context = [ 'content' => $chunk['data']->getHtml() ];
@@ -145,7 +142,7 @@ class ContextQuery
 
     private function queryEntries(EntryQuery $query, array $includeIds = []): Collection
     {
-        $excludes = $this->cachedDescriptors->pluck('id')->toArray();
+        $excludes = $this->cacheSet->getEntryIds()->toArray();
         $idParam = ['not', ...$excludes];
         if (!empty($includeIds)) {
             // switch rule to include only by Ids
