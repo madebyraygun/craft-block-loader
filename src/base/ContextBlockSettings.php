@@ -5,7 +5,7 @@ namespace madebyraygun\blockloader\base;
 class ContextBlockSettings
 {
     private string $id;
-    public string $blockHandle;
+    public string $templateHandle;
     public string $fieldHandle;
     public bool $cacheable;
     public array $eagerFields;
@@ -14,7 +14,7 @@ class ContextBlockSettings
     {
         $this->id = uniqid();
         $this->fieldHandle = '';
-        $this->blockHandle = '';
+        $this->templateHandle = '';
         $this->eagerFields = [];
         $this->cacheable = false;
     }
@@ -32,14 +32,14 @@ class ContextBlockSettings
     }
 
     /**
-     * Set the block handle.
+     * Set the template handle.
      * This is the handle used to id the block in the template.
-     * @param string $blockHandle
+     * @param string $templateHandle
      * @return self
      */
-    public function blockHandle(string $blockHandle): self
+    public function templateHandle(string $templateHandle): self
     {
-        $this->blockHandle = $blockHandle;
+        $this->templateHandle = $templateHandle;
         return $this;
     }
 

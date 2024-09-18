@@ -8,13 +8,13 @@ class ContextDescriptor
     public int $order;
     public bool $cacheable;
     public string $fieldHandle;
-    public string $handle;
+    public string $templateHandle;
     public array $context;
 
     public function __construct(
         string $id,
         string $fieldHandle,
-        string $handle,
+        string $templateHandle,
         int $order,
         bool $cacheable,
         array $context
@@ -22,8 +22,8 @@ class ContextDescriptor
     {
         $this->id = $id;
         $this->fieldHandle = $fieldHandle;
+        $this->templateHandle = $templateHandle;
         $this->order = $order;
-        $this->handle = $handle;
         $this->cacheable = $cacheable;
         $this->context = $context;
     }

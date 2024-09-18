@@ -16,7 +16,7 @@ abstract class ContextBlock
         $this->entry = $entry;
         $this->settings = (new ContextBlockSettings())
             ->fieldHandle(lcfirst($handle))
-            ->blockHandle(StringHelper::toKebabCase($handle))
+            ->templateHandle(StringHelper::toKebabCase($handle))
             ->cacheable(true);
         $this->setSettings();
     }

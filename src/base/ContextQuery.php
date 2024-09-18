@@ -78,7 +78,7 @@ class ContextQuery
                 return new ContextDescriptor(
                     $entry->id,
                     $this->fieldHandle,
-                    $contextBlock->settings->blockHandle,
+                    $contextBlock->settings->templateHandle,
                     $chunk['order'],
                     $contextBlock->settings->cacheable,
                     $context
@@ -90,27 +90,33 @@ class ContextQuery
 
     private function transformMarkupChunks(Collection $chunks): Collection
     {
-        return $chunks
-            ->filter(fn($chunk) => $chunk['data']->getType() === 'markup')
-            ->map(function($chunk) {
-                // generate a default context for the markup
-                $context = [ 'content' => $chunk['data']->getHtml() ];
-                // try find if there is class to handle this field
-                $contextBlock = BlocksFactory::create('markup');
-                if ($contextBlock) {
-                    $contextBlock->setEntry($this->entry);
-                    $context = $contextBlock->getMarkupContext($chunk['data']);
-                }
-                $id = 'markup:' . $chunk['order'];
-                return new ContextDescriptor(
-                    $id,
-                    $this->fieldHandle,
-                    'markup',
-                    $chunk['order'],
-                    false,
-                    $context
-                );
-            });
+        $chunks = $chunks->filter(fn($chunk) => $chunk['data']->getType() === 'markup');
+        // remove cached chunks
+        $chunks = $chunks->filter(fn($chunk) => !$this->cachedDescriptors->contains('id', 'markup:' . $chunk['order']));
+        $descriptors = $chunks->map(function($chunk) {
+            // generate a default context for the markup
+            $context = [ 'content' => $chunk['data']->getHtml() ];
+            $templateHandle = 'markup';
+            $cacheable = false;
+            // try find if there is class to handle this field
+            $contextBlock = BlocksFactory::create('markup');
+            if ($contextBlock) {
+                $contextBlock->setEntry($this->entry);
+                $context = $contextBlock->getMarkupContext($chunk['data']);
+                $templateHandle = $contextBlock->settings->templateHandle;
+                $cacheable = $contextBlock->settings->cacheable;
+            }
+            $id = 'markup:' . $chunk['order'];
+            return new ContextDescriptor(
+                $id,
+                $this->fieldHandle,
+                $templateHandle,
+                $chunk['order'],
+                $cacheable,
+                $context
+            );
+        });
+        return $descriptors->merge($this->cachedDescriptors);
     }
 
     private function getDescriptorsFromEntryQuery(): Collection
@@ -124,7 +130,7 @@ class ContextQuery
                 return new ContextDescriptor(
                     $entry->id,
                     $this->fieldHandle,
-                    $contextBlock->settings->blockHandle,
+                    $contextBlock->settings->templateHandle,
                     $entry->sortOrder,
                     $contextBlock->settings->cacheable,
                     $context
@@ -156,10 +162,10 @@ class ContextQuery
     private function getEagerFields(ContextBlockSettings $settings)
     {
         $fields = [];
-        $fieldHandle = $settings->fieldHandle;
+        $childFieldHandle = $settings->fieldHandle;
         foreach ($settings->eagerFields as $field) {
             $name = is_array($field) ? $field[0] ?? '' : $field;
-            $prefixedField = $this->fieldHandle . '.' . $fieldHandle . ':' . $name;
+            $prefixedField = $this->fieldHandle . '.' . $childFieldHandle . ':' . $name;
             if (is_array($field)) {
                 // handle array fields with custom params
                 $prefixedField = [$prefixedField, ...array_slice($field, 1)];
