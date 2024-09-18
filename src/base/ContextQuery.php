@@ -47,6 +47,8 @@ class ContextQuery
             default:
                 $result =  collect([]);
         }
+        $newCache = $this->cachedDescriptors->filter(fn($d) => !$result->contains('id', $d->id));
+        $result = $result->merge($newCache);
         return $result
             ->sort(fn($a, $b) => $a->order <=> $b->order)
             ->values();
@@ -85,6 +87,7 @@ class ContextQuery
                 );
             }
         });
+        $this->cachedDescriptors = $this->cachedDescriptors->filter(fn($d) => !$descriptors->contains('id', $d->id));
         return $descriptors->merge($this->cachedDescriptors);
     }
 
@@ -116,7 +119,7 @@ class ContextQuery
                 $context
             );
         });
-        return $descriptors->merge($this->cachedDescriptors);
+        return $descriptors;
     }
 
     private function getDescriptorsFromEntryQuery(): Collection
@@ -137,7 +140,7 @@ class ContextQuery
                 );
             }
         });
-        return $descriptors->merge($this->cachedDescriptors);
+        return $descriptors;
     }
 
     private function queryEntries(EntryQuery $query, array $includeIds = []): Collection
