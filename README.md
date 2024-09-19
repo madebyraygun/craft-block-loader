@@ -20,19 +20,18 @@ php craft plugin/install block-loader
 ```
 
 ## Configuration
-
-By default, the plugin will initialize all block class definitions from the `craft/modules/blocks` directory.
+By default, the plugin will initialize all block class definitions using the namespace `modules\blocks` in the `craft/modules/blocks` directory.
 To change these defaults, create a `block-loader.php` file in your Craft config directory to change this directory.
 
 Sample config:
 ```php
 return [
-  'blocksPath' => dirname(__DIR__) . '/modules/blocks',
+  'blocksNamespace' => 'modules\blocks',
 ];
 ```
 
 ## Usage
-Each class defined inside the `blocksPath` is paired with an entry block inside a [Matrix Field](https://docs.craftcms.com/api/v5/craft-fields-matrix.html#matrix) or a [Ckeditor Field](https://github.com/craftcms/ckeditor) using their block handle. You need to extend from the `ContextBlock` class and implement the `getContext` method to return the context data for your block.
+Each class defined using the provided namespace `modules\blocks` is paired with each entry block inside a [Matrix Field](https://docs.craftcms.com/api/v5/craft-fields-matrix.html#matrix) or a [Ckeditor Field](https://github.com/craftcms/ckeditor) using their block handle. You need to extend from the `ContextBlock` class and implement the `getContext` method to return the context data for your block.
 
 Example:
 `AnchorBlock.php`
