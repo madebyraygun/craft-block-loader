@@ -56,7 +56,7 @@ Not very exciting, but hopefully you see that this gives you the opportunity to 
 
 More complex examples can extend the `ContextBlockSettings` class to change the settings on a per-block basis. Settings options include:
 * `fieldHandle`: The `entry` type handle inside a `matrix` or `ckeditor` fields. By default this is auto-generated based on the classname. Example: a class `RichTextBlock` will look for a `richText` handle inside your fields.
-* `blockHandle`: The handle of the matrix block this class should be paired with.
+* `templateHandle`: The handle to id each block. This can be any id you want to use to identify the block in your templates.
 * `eagerFields`: Whether to [load fields eagerly](https://craftcms.com/docs/5.x/development/eager-loading.html) to improve performance on related or nested elements. Passed as an array of field handles like `['cards.image','cards.author']`.
 * `cacheable`: Whether the results of the query should be cached (improves performance on large pages)
 
