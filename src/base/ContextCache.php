@@ -3,11 +3,12 @@
 namespace madebyraygun\blockloader\base;
 
 use Craft;
+use yii\base\Event;
 use craft\elements\Asset;
 use craft\elements\Entry;
 use craft\events\ModelEvent;
 use Illuminate\Support\Collection;
-use yii\base\Event;
+use madebyraygun\blockloader\Plugin;
 
 class ContextCache
 {
@@ -15,7 +16,7 @@ class ContextCache
 
     private static function getKey(Entry $entry): string
     {
-        return "page_blocks_$entry->id";
+        return strval($entry->id);
     }
 
     public static function set(Entry $entry, Collection $descriptors): void
@@ -24,15 +25,14 @@ class ContextCache
             return;
         }
         $key = static::getKey($entry);
-        // $descriptors = static::filterCacheableDescriptors($descriptors);
-        Craft::$app->cache->set($key, serialize($descriptors->toArray()));
+        Plugin::$plugin->cache->set($key, serialize($descriptors->toArray()));
     }
 
     public static function get(Entry $entry): ?Collection
     {
         if (!Craft::$app->request->isPreview && static::$CACHE === null) {
             $key = static::getKey($entry);
-            $content = Craft::$app->cache->get($key);
+            $content = Plugin::$plugin->cache->get($key);
             if (!empty($content)) {
                 static::$CACHE = collect(unserialize($content));
             }
@@ -43,7 +43,7 @@ class ContextCache
     public static function clear(Entry $entry): void
     {
         $key = static::getKey($entry);
-        Craft::$app->cache->delete($key);
+        Plugin::$plugin->cache->delete($key);
     }
 
     public static function filterCacheableDescriptors(Collection $descriptors): Collection
