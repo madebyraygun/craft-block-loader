@@ -69,7 +69,7 @@ class Plugin extends BasePlugin
                 $cachePath = '`' . $this->cache->getRelativePath() . '`';
                 $event->options[] = [
                     'key' => 'block-loader',
-                    'label' => 'Blocks Data',
+                    'label' => 'Blocks context data',
                     'info' => 'Cached data for blocks contexts in: ' . $cachePath,
                     'action' => function() {
                         $this->cache->flush();
