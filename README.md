@@ -103,3 +103,8 @@ In your entry template:
   {% include '@content-blocks/' ~ item.templateHandle with item.context %}
 {% endfor %}
 ```
+
+## Cache
+The plugin will cache all blocks defined as `cacheable` in the context block settings. This will improve performance for blocks that don't change its context on a per-request basis. The blocks cache is cleared every time an Entry is saved, affecting only the blocks that are related to the saved entry.
+
+If you need to clear the cache globally for all entries, you can do so from the Craft Control Panel under the `Utilities > Caches > Blocks context data` item or by running the `php craft clear-caches/block-loader` command from the terminal.
