@@ -137,7 +137,7 @@ class ContextQuery
                 );
             }
         });
-        return $descriptors;
+        return $descriptors->filter();
     }
 
     private function queryEntries(EntryQuery $query, array $includeIds = []): Collection
