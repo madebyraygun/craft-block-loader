@@ -7,21 +7,21 @@ use craft\base\Model;
 
 class Settings extends Model
 {
-    public string $blocksPath = '';
+    public string $blocksNamespace = '';
 
     // set defaults
     public function init(): void
     {
         parent::init();
-        $this->blocksPath = Craft::getAlias('@root') . '/modules/blocks';
+        $this->blocksNamespace = 'modules/blocks';
     }
 
 
     public function rules(): array
     {
         return [
-            ['blocksPath', 'required'],
-            ['blocksPath', 'string']
+            ['blocksNamespace', 'required'],
+            ['blocksNamespace', 'string']
         ];
     }
 }

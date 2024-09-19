@@ -52,53 +52,34 @@ class Plugin extends BasePlugin
 
         Craft::$app->onInit(function() {
             $settings = $this->getSettings();
-            // Automatically include all block classes
-            $blocksPath = $settings['blocksPath'];
-            $blockFiles = glob($blocksPath . '/*.php');
-            $blockClasses = [];
-
-            foreach ($blockFiles as $file) {
-                $className = $this->getClassNameFromFile($file);
-                if ($className) {
-                    $blockClasses[] = '\\' . $className;
-                }
-            }
-            BlocksProvider::init($blockClasses);
+            $blocksNamespace = $settings['blocksNamespace'];
+            $classes = $this->getClassesFromAutoload($blocksNamespace);
+            BlocksProvider::init($classes);
         });
     }
 
-    /**
-     * Extract a fully qualfied (namespaced) classname from a php file.
-     * This function assumes PSR-0 compliance.
-     *
-     * @param   string  $filePath   Path to the php file.
-     * @return  string|false        The resulting classname
-     */
-    private function getClassNameFromFile($filePath)
+    private function getClassesFromAutoload(string $namespace): array
     {
-        if (!file_exists($filePath)) {
-            return false;
+        if (empty($namespace)) {
+            return [];
         }
-
-        $namespace  = null;
-        $classname  = null;
-        $cnMatches  = null;
-        $nsMatches  = null;
-        $file       = file_get_contents($filePath);
-
-        if (preg_match_all('/\n\s*(abstract\s|final\s)*class\s+(?<name>[^\s;]+)\s*/i', $file, $cnMatches, PREG_PATTERN_ORDER)) {
-            $classname  = array_pop($cnMatches['name']);
-
-            if (preg_match_all('/namespace\s+(?<name>[^\s;]+)\s*;/i', $file, $nsMatches, PREG_PATTERN_ORDER)) {
-                $namespace  = array_pop($nsMatches['name']);
+        $autoloadClass = null;
+        foreach (get_declared_classes() as $class) {
+            if (strpos($class, 'ComposerAutoloaderInit') === 0) {
+                $autoloadClass = $class;
+                break;
             }
         }
-
-        if (empty($classname)) {
-            return false;
+        if (empty($autoloadClass)) {
+            return [];
         }
-
-        return "$namespace\\$classname";
+        $classLoader = $autoloadClass::getLoader();
+        $map = $classLoader->getClassMap();
+        $arr = array_filter($map, function($key) use ($namespace) {
+            // starts with namespace
+            return strpos($key, $namespace) === 0;
+        }, ARRAY_FILTER_USE_KEY);
+        return array_keys($arr);
     }
 
     protected function createSettingsModel(): ?Model
