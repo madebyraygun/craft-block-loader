@@ -108,3 +108,37 @@ In your entry template:
 The plugin will cache all blocks defined as `cacheable` in the context block settings. This will improve performance for blocks that don't change its context on a per-request basis. The blocks cache is cleared every time an Entry is saved, affecting only the blocks that are related to the saved entry.
 
 If you need to clear the cache globally for all entries, you can do so from the Craft Control Panel under the `Utilities > Caches > Blocks context data` item or by running the `php craft clear-caches/block-loader` command from the terminal.
+
+
+## Ckeditor Fields
+You can call `blocksFromField` function on an entry indistinctly of the field type (`Matrix` or `Ckeditor`). The plugin will automatically detect the field type and return the blocks in the same format. However, for `Ckeditor` fields the `markup` is by default wrapped as a block, you can pass the context into a specific component or just render the `markup` directly.
+
+```twig
+{% set blocks = entry.blocksFromField('ckEditorFieldHandle') %}
+{% for item in blocks %}
+  {% if item.templateHandle == 'markup' %}
+    {{ item.context.content|raw }}
+  {% else %}
+    {% include '@content-blocks/' ~ item.templateHandle with item.context %}
+  {% endif %}
+{% endfor %}
+```
+
+For more advance preprocessing on the `markup` context blocks you can create your own class extending from `ContextBlock` class and implementing the `getMarkupContext` method. For this class to be automatically called the `fieldHandle` setting must be set to `markup`. Or just name the class `MarkupBlock` and the plugin will automatically derive the template handle from the class name as `markup`.
+
+```php
+namespace modules\blocks;
+use madebyraygun\blockloader\base\ContextBlock;
+
+class MarkupBlock extends ContextBlock
+{
+    public function getMarkupContext(string $markup): array
+    {
+        // do some preprocessing on the markup before rendering
+        $markup = preg_replace('/<p>/', '<p class="prose">', $markup);
+        return [
+            'content' => $markup,
+        ];
+    }
+}
+```
