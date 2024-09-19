@@ -65,13 +65,12 @@ namespace modules\blocks;
 
 use craft\elements\EntryBlock;
 use madebyraygun\blockloader\base\ContextBlock;
-use madebyraygun\blockloader\base\ContextBlockSettings;
 
 class RichTextBlock extends ContextBlock
 {
-    protected function onInit(ContextBlockSettings $settings): void
+    public function setSettings(): void
     {
-        $settings
+        $this->settings
             ->templateHandle('richTextColumns')
             ->eagerFields([
                 'richTextColumns',
