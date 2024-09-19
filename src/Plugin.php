@@ -3,6 +3,7 @@
 namespace madebyraygun\blockloader;
 
 use Craft;
+use Composer\Autoload\ClassLoader;
 use yii\base\Event;
 use craft\base\Model;
 use craft\base\Plugin as BasePlugin;
@@ -63,19 +64,19 @@ class Plugin extends BasePlugin
         if (empty($namespace)) {
             return [];
         }
-        $autoloadClass = null;
-        foreach (get_declared_classes() as $class) {
-            if (strpos($class, 'ComposerAutoloaderInit') === 0) {
-                $autoloadClass = $class;
+        $spl_af = spl_autoload_functions();
+        $classLoader = null;
+        foreach ($spl_af as $func) {
+            if (is_array($func) && $func[0] instanceof ClassLoader) {
+                $classLoader = $func[0];
                 break;
             }
         }
-        if (empty($autoloadClass)) {
+        if (empty($classLoader)) {
             return [];
         }
-        $classLoader = $autoloadClass::getLoader();
-        $map = $classLoader->getClassMap();
-        $arr = array_filter($map, function($key) use ($namespace) {
+        $classMap = $classLoader->getClassMap();
+        $arr = array_filter($classMap, function($key) use ($namespace) {
             // starts with namespace
             return strpos($key, $namespace) === 0;
         }, ARRAY_FILTER_USE_KEY);
