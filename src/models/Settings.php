@@ -9,11 +9,14 @@ class Settings extends Model
 {
     public string $blocksNamespace = '';
 
+    public bool $scanNewClasses = false;
+
     // set defaults
     public function init(): void
     {
         parent::init();
         $this->blocksNamespace = 'modules/blocks';
+        $this->scanNewClasses = false;
     }
 
 
@@ -21,7 +24,8 @@ class Settings extends Model
     {
         return [
             ['blocksNamespace', 'required'],
-            ['blocksNamespace', 'string']
+            ['blocksNamespace', 'string'],
+            ['scanNewClasses', 'boolean'],
         ];
     }
 }
