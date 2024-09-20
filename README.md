@@ -20,15 +20,29 @@ php craft plugin/install block-loader
 ```
 
 ## Configuration
-By default, the plugin will initialize all block class definitions using the namespace `modules\blocks` in the `craft/modules/blocks` directory.
+By default, the plugin will initialize all block class definitions using the namespace `modules\blocks` in the `craft/modules/blocks` directory so make sure you have the proper [autoloading config](https://craftcms.com/docs/5.x/extend/module-guide.html#set-up-class-autoloading) in place. Where you tipically would have:
+
+```json
+"autoload": {
+  "psr-4": {
+    "modules\\blocks": "modules/blocks"
+  }
+}
+```
+
+`ContextBlock` classes work outside the module initialization logic from CraftCMS but it is expected to have compliance with the [PSR-4](https://www.php-fig.org/psr/psr-4/) standard on the directory structure you define.
 To change these defaults, create a `block-loader.php` file in your Craft config directory to change this directory.
 
 Sample config:
 ```php
 return [
   'blocksNamespace' => 'modules\blocks',
+  'scanNewFiles' => false
 ];
 ```
+
+## Scan New Files
+Available `ContextBlock` classes are automatically detected based on the `namespace` you define, but the `autoloader` will not pick up file changes until you regenerate the `autoloader` class map, which you can do by running `composer dump-autoload -a`. This can be a bit cumbersome during development. Instead, you can set the `scanNewFiles` setting to true, and the plugin will scan the directory for new files on every request. Just note that this is **not recommended** for production environments since performance can be affected.
 
 ## Usage
 Each class defined using the provided namespace `modules\blocks` is paired with each entry block inside a [Matrix Field](https://docs.craftcms.com/api/v5/craft-fields-matrix.html#matrix) or a [Ckeditor Field](https://github.com/craftcms/ckeditor) using their block handle. You need to extend from the `ContextBlock` class and implement the `getContext` method to return the context data for your block.
