@@ -7,6 +7,9 @@ use Composer\ClassMapGenerator\ClassMapGenerator;
 
 class ClassFinder
 {
+
+    private static ClassLoader $classLoader;
+
     public static function getClasses(string $namespace, bool $scanNewFiles): array
     {
         if (empty($namespace)) {
@@ -30,15 +33,18 @@ class ClassFinder
 
     private static function getClassLoader(): ClassLoader
     {
-        $spl_af = spl_autoload_functions();
-        $classLoader = null;
-        foreach ($spl_af as $func) {
-            if (is_array($func) && $func[0] instanceof ClassLoader) {
-                $classLoader = $func[0];
-                break;
+        if (!isset(self::$classLoader)) {
+            $spl_af = spl_autoload_functions();
+            $classLoader = null;
+            foreach ($spl_af as $func) {
+                if (is_array($func) && $func[0] instanceof ClassLoader) {
+                    $classLoader = $func[0];
+                    break;
+                }
             }
+            self::$classLoader = $classLoader;
         }
-        return $classLoader;
+        return self::$classLoader;
     }
 
     private static function getClassesFromAutoload(string $namespace): array
