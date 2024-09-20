@@ -3,7 +3,6 @@
 namespace madebyraygun\blockloader;
 
 use Craft;
-use Composer\Autoload\ClassLoader;
 use yii\base\Event;
 use craft\base\Model;
 use craft\base\Plugin as BasePlugin;
@@ -11,6 +10,7 @@ use craft\events\DefineBehaviorsEvent;
 use craft\elements\Entry;
 use craft\events\RegisterCacheOptionsEvent;
 use craft\utilities\ClearCaches;
+use madebyraygun\blockloader\helpers\ClassFinder;
 use madebyraygun\blockloader\behaviors\BlocksLoaderBehavior;
 use madebyraygun\blockloader\base\BlocksProvider;
 use madebyraygun\blockloader\base\PluginLogTrait;
@@ -81,33 +81,9 @@ class Plugin extends BasePlugin
         Craft::$app->onInit(function() {
             $settings = $this->getSettings();
             $blocksNamespace = $settings['blocksNamespace'];
-            $classes = $this->getClassesFromAutoload($blocksNamespace);
+            $classes = ClassFinder::loadNamespace($blocksNamespace);
             BlocksProvider::init($classes);
         });
-    }
-
-    private function getClassesFromAutoload(string $namespace): array
-    {
-        if (empty($namespace)) {
-            return [];
-        }
-        $spl_af = spl_autoload_functions();
-        $classLoader = null;
-        foreach ($spl_af as $func) {
-            if (is_array($func) && $func[0] instanceof ClassLoader) {
-                $classLoader = $func[0];
-                break;
-            }
-        }
-        if (empty($classLoader)) {
-            return [];
-        }
-        $classMap = $classLoader->getClassMap();
-        $arr = array_filter($classMap, function($key) use ($namespace) {
-            // starts with namespace
-            return strpos($key, $namespace) === 0;
-        }, ARRAY_FILTER_USE_KEY);
-        return array_keys($arr);
     }
 
     protected function createSettingsModel(): ?Model
