@@ -37,7 +37,8 @@ Sample config:
 ```php
 return [
   'blocksNamespace' => 'modules\blocks',
-  'scanNewFiles' => false
+  'scanNewFiles' => false,
+  'enableCaching' => true,
 ];
 ```
 
@@ -122,6 +123,8 @@ In your entry template:
 The plugin will cache all blocks defined as `cacheable` in the context block settings. This will improve performance for blocks that don't change its context on a per-request basis. The blocks cache is cleared every time an Entry is saved, affecting only the blocks that are related to the saved entry.
 
 If you need to clear the cache globally for all entries, you can do so from the Craft Control Panel under the `Utilities > Caches > Blocks context data` item or by running the `php craft clear-caches/block-loader` command from the terminal.
+
+Additionally you can disable the caching for all blocks entirely by setting the `enableCaching` setting to `false` in the `block-loader.php` config file. This is useful for development environments where you want to see changes to your blocks immediately. But you may want to enable caching in production to improve performance.
 
 
 ## Ckeditor Fields

@@ -11,12 +11,15 @@ class Settings extends Model
 
     public bool $scanNewClasses = false;
 
+    public bool $enableCaching = false;
+
     // set defaults
     public function init(): void
     {
         parent::init();
         $this->blocksNamespace = 'modules/blocks';
         $this->scanNewClasses = false;
+        $this->enableCaching = true;
     }
 
 
@@ -26,6 +29,7 @@ class Settings extends Model
             ['blocksNamespace', 'required'],
             ['blocksNamespace', 'string'],
             ['scanNewClasses', 'boolean'],
+            ['enableCaching', 'boolean'],
         ];
     }
 }

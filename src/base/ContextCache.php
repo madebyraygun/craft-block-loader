@@ -21,7 +21,8 @@ class ContextCache
 
     public static function set(Entry $entry, Collection $descriptors): void
     {
-        if (Craft::$app->request->isPreview) {
+        $cacheEnabled = Plugin::$plugin->getSettings()['enableCaching'];
+        if (Craft::$app->request->isPreview || !$cacheEnabled) {
             return;
         }
         $key = static::getKey($entry);
@@ -30,7 +31,8 @@ class ContextCache
 
     public static function get(Entry $entry): ?Collection
     {
-        if (!Craft::$app->request->isPreview && static::$CACHE === null) {
+        $cacheEnabled = Plugin::$plugin->getSettings()['enableCaching'];
+        if (!Craft::$app->request->isPreview && static::$CACHE === null && $cacheEnabled) {
             $key = static::getKey($entry);
             $content = Plugin::$plugin->cache->get($key);
             if (!empty($content)) {
