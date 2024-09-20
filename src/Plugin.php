@@ -81,7 +81,8 @@ class Plugin extends BasePlugin
         Craft::$app->onInit(function() {
             $settings = $this->getSettings();
             $blocksNamespace = $settings['blocksNamespace'];
-            $classes = ClassFinder::loadNamespace($blocksNamespace);
+            $scanNewClasses = $settings['scanNewClasses'];
+            $classes = ClassFinder::getClasses($blocksNamespace, $scanNewClasses);
             BlocksProvider::init($classes);
         });
     }

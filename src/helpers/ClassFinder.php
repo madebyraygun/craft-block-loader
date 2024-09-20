@@ -2,34 +2,34 @@
 
 namespace madebyraygun\blockloader\helpers;
 
-use Craft;
 use Composer\Autoload\ClassLoader;
-
+use Composer\ClassMapGenerator\ClassMapGenerator;
 
 class ClassFinder
 {
-    public static function loadNamespace(string $namespace): array
-    {
-        return self::getClassesFromAutoload($namespace);
-    }
-
-    private static function getClassesFromAutoload(string $namespace): array
+    public static function getClasses(string $namespace, bool $scanNewFiles): array
     {
         if (empty($namespace)) {
             return [];
         }
-
-        // require modules/blocks/CustomBlock.php
-        $path = Craft::getAlias('@root' . '/modules/blocks/CustomBlock.php');
-        if (file_exists($path)) {
-            require_once $path;
+        $classes = self::getClassesFromAutoload($namespace);
+        if ($scanNewFiles) {
+            $fileClasses = self::getClassesFromFiles($namespace);
+            $classes = array_unique(array_merge($fileClasses, $classes));
         }
-        $cls = get_declared_classes();
-        // find classes that start with the namespace
-        $test_classes = array_filter($cls, function($cls) use ($namespace) {
-            return strpos($cls, $namespace) === 0;
+        // remove invalid classes
+        $classes = array_filter($classes, function($class) {
+            try {
+                return class_exists($class);
+            } catch (\Throwable $e) {
+                return false;
+            }
         });
+        return $classes;
+    }
 
+    private static function getClassLoader(): ClassLoader
+    {
         $spl_af = spl_autoload_functions();
         $classLoader = null;
         foreach ($spl_af as $func) {
@@ -38,6 +38,12 @@ class ClassFinder
                 break;
             }
         }
+        return $classLoader;
+    }
+
+    private static function getClassesFromAutoload(string $namespace): array
+    {
+        $classLoader = self::getClassLoader();
         if (empty($classLoader)) {
             return [];
         }
@@ -47,5 +53,24 @@ class ClassFinder
             return strpos($key, $namespace) === 0;
         }, ARRAY_FILTER_USE_KEY);
         return array_keys($arr);
+    }
+
+    private static function getClassesFromFiles(string $namespace): array
+    {
+        $classLoader = self::getClassLoader();
+        $psr4 = $classLoader->getPrefixesPsr4();
+        // find the longest matching prefix for the namespace and fallback by removing the last part
+        // until we find a match or reach the root.
+        $path = '';
+        $parts = explode('\\', $namespace);
+        $len = count($parts);
+        for ($i = $len; $i > 0; $i--) {
+            $prefix = implode('\\', array_slice($parts, 0, $i)) . '\\';
+            if (isset($psr4[$prefix])) {
+                $path = $psr4[$prefix][0];
+                break;
+            }
+        }
+        return array_keys(ClassMapGenerator::createMap($path));
     }
 }
