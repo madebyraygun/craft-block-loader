@@ -7,33 +7,29 @@ use craft\base\Model;
 
 class Settings extends Model
 {
-    public string $blocksPath = '';
+    public string $blocksNamespace = '';
 
-    public string $matrixHandle = 'blocks';
+    public bool $scanNewClasses = false;
 
-    public string $hookName = 'blocks';
-
-    public string $globalContextHandle = 'blocks';
+    public bool $enableCaching = false;
 
     // set defaults
     public function init(): void
     {
         parent::init();
-        $this->blocksPath = Craft::getAlias('@root') . '/modules/blocks';
+        $this->blocksNamespace = 'modules/blocks';
+        $this->scanNewClasses = false;
+        $this->enableCaching = true;
     }
 
 
     public function rules(): array
     {
         return [
-            ['blocksPath', 'required'],
-            ['blocksPath', 'string'],
-            ['matrixHandle', 'required'],
-            ['matrixHandle', 'string'],
-            ['hookName', 'required'],
-            ['hookName', 'string'],
-            ['globalContextHandle', 'required'],
-            ['globalContextHandle', 'string'],
+            ['blocksNamespace', 'required'],
+            ['blocksNamespace', 'string'],
+            ['scanNewClasses', 'boolean'],
+            ['enableCaching', 'boolean'],
         ];
     }
 }

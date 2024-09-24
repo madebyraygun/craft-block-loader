@@ -2,61 +2,44 @@
 
 namespace madebyraygun\blockloader\base;
 
-use madebyraygun\blockloader\Plugin;
-
 class ContextBlockSettings
 {
     private string $id;
-    public string $contextHandle;
-    public string $matrixHandle;
-    public string $blockHandle;
+    public string $templateHandle;
+    public string $fieldHandle;
     public bool $cacheable;
     public array $eagerFields;
 
     public function __construct()
     {
-        $settings = Plugin::getInstance()->getSettings();
         $this->id = uniqid();
-        $this->blockHandle = '';
-        $this->contextHandle = $settings['globalContextHandle'];
-        $this->matrixHandle = $settings['matrixHandle'];
+        $this->fieldHandle = '';
+        $this->templateHandle = '';
         $this->eagerFields = [];
         $this->cacheable = false;
     }
 
     /**
-     * Set the block handle.
-     * This should match the handle for the block type inside the matrix field.
-     * @param string $blockHandle
+     * Set the field handle.
+     * This should match the handle for the entry field ($entry->type->handle).
+     * @param string $fieldHandle
      * @return self
      */
-    public function blockHandle(string $blockHandle): self
+    public function fieldHandle(string $fieldHandle): self
     {
-        $this->blockHandle = $blockHandle;
+        $this->fieldHandle = $fieldHandle;
         return $this;
     }
 
     /**
-     * Set the context handle for the block.
-     * This is the handle used to access the block in the template.
-     * @param string $contextHandle
+     * Set the template handle.
+     * This is the handle used to id the block in the template.
+     * @param string $templateHandle
      * @return self
      */
-    public function contextHandle(string $contextHandle): self
+    public function templateHandle(string $templateHandle): self
     {
-        $this->contextHandle = $contextHandle;
-        return $this;
-    }
-
-    /**
-     * Set the matrix handle for the block.
-     * This should match the handle of the matrix field in the entry.
-     * @param string $matrixHandle
-     * @return self
-     */
-    public function matrixHandle(string $matrixHandle): self
-    {
-        $this->matrixHandle = $matrixHandle;
+        $this->templateHandle = $templateHandle;
         return $this;
     }
 
@@ -80,21 +63,6 @@ class ContextBlockSettings
     public function cacheable(bool $cacheable): self
     {
         $this->cacheable = $cacheable;
-        return $this;
-    }
-
-    /**
-     * Copy settings from another ContextBlockSettings instance.
-     * @param ContextBlockSettings $settings
-     * @return self
-     */
-    public function copy(ContextBlockSettings $settings): self
-    {
-        $this->blockHandle = $settings->blockHandle;
-        $this->contextHandle = $settings->contextHandle;
-        $this->matrixHandle = $settings->matrixHandle;
-        $this->eagerFields = $settings->eagerFields;
-        $this->cacheable = $settings->cacheable;
         return $this;
     }
 }

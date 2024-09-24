@@ -3,10 +3,12 @@
 namespace madebyraygun\blockloader\base;
 
 use Craft;
+use yii\base\Event;
 use craft\elements\Asset;
 use craft\elements\Entry;
 use craft\events\ModelEvent;
-use yii\base\Event;
+use Illuminate\Support\Collection;
+use madebyraygun\blockloader\Plugin;
 
 class ContextCache
 {
@@ -14,42 +16,41 @@ class ContextCache
 
     private static function getKey(Entry $entry): string
     {
-        return "page_blocks_$entry->id";
+        return strval($entry->id);
     }
 
-    public static function set(Entry $entry, array $blockDescriptors): void
+    public static function set(Entry $entry, Collection $descriptors): void
     {
-        if (Craft::$app->request->isPreview) {
+        $cacheEnabled = Plugin::$plugin->getSettings()['enableCaching'];
+        if (Craft::$app->request->isPreview || !$cacheEnabled) {
             return;
         }
         $key = static::getKey($entry);
-        $blockDescriptors = static::filterCacheableDescriptors($blockDescriptors);
-        Craft::$app->cache->set($key, serialize($blockDescriptors));
+        Plugin::$plugin->cache->set($key, serialize($descriptors->toArray()));
     }
 
-    public static function get(Entry $entry): array|null
+    public static function get(Entry $entry): ?Collection
     {
-        if (!Craft::$app->request->isPreview && static::$CACHE === null) {
+        $cacheEnabled = Plugin::$plugin->getSettings()['enableCaching'];
+        if (!Craft::$app->request->isPreview && static::$CACHE === null && $cacheEnabled) {
             $key = static::getKey($entry);
-            $content = Craft::$app->cache->get($key);
+            $content = Plugin::$plugin->cache->get($key);
             if (!empty($content)) {
-                static::$CACHE = unserialize($content);
+                static::$CACHE = collect(unserialize($content));
             }
         }
-        return static::$CACHE ?? [];
+        return static::$CACHE;
     }
 
     public static function clear(Entry $entry): void
     {
         $key = static::getKey($entry);
-        Craft::$app->cache->delete($key);
+        Plugin::$plugin->cache->delete($key);
     }
 
-    public static function filterCacheableDescriptors(array $descriptors): array
+    public static function filterCacheableDescriptors(Collection $descriptors): Collection
     {
-        return array_filter($descriptors, function(ContextDescriptor $descriptor) {
-            return $descriptor->cacheable;
-        });
+        return $descriptors->filter(fn($descriptor) => $descriptor->cacheable);
     }
 
     private static function clearRelations(mixed $element): void

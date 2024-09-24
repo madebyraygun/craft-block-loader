@@ -3,11 +3,19 @@
 namespace madebyraygun\blockloader;
 
 use Craft;
+use yii\base\Event;
 use craft\base\Model;
 use craft\base\Plugin as BasePlugin;
+use craft\events\DefineBehaviorsEvent;
+use craft\elements\Entry;
+use craft\events\RegisterCacheOptionsEvent;
+use craft\utilities\ClearCaches;
+use madebyraygun\blockloader\helpers\ClassFinder;
+use madebyraygun\blockloader\behaviors\BlocksLoaderBehavior;
 use madebyraygun\blockloader\base\BlocksProvider;
-use madebyraygun\blockloader\models\Settings;
 use madebyraygun\blockloader\base\PluginLogTrait;
+use madebyraygun\blockloader\models\Settings;
+use madebyraygun\blockloader\services\BlocksFileCache;
 
 /**
  * craft-block-loader Plugin
@@ -24,6 +32,14 @@ class Plugin extends BasePlugin
 
     use PluginLogTrait;
 
+    public static function config(): array {
+        return [
+            'components' => [
+                'cache' => BlocksFileCache::class,
+            ],
+        ];
+    }
+
     public function init(): void
     {
         parent::init();
@@ -39,55 +55,36 @@ class Plugin extends BasePlugin
 
         $this->registerLogger();
 
+        Event::on(
+            Entry::class,
+            Entry::EVENT_DEFINE_BEHAVIORS,
+            function(DefineBehaviorsEvent $event) {
+                $event->behaviors['blocksloader'] = BlocksLoaderBehavior::class;
+            });
+
+        Event::on(
+            ClearCaches::class,
+            ClearCaches::EVENT_REGISTER_CACHE_OPTIONS,
+            function(RegisterCacheOptionsEvent $event) {
+                $cachePath = '`' . $this->cache->getRelativePath() . '`';
+                $event->options[] = [
+                    'key' => 'block-loader',
+                    'label' => 'Blocks context data',
+                    'info' => 'Cached data for blocks contexts in: ' . $cachePath,
+                    'action' => function() {
+                        $this->cache->flush();
+                    }
+                ];
+            }
+        );
+
         Craft::$app->onInit(function() {
             $settings = $this->getSettings();
-            // Automatically include all block classes
-            $blocksPath = $settings['blocksPath'];
-            $blockFiles = glob($blocksPath . '/*.php');
-            $blockClasses = [];
-
-            foreach ($blockFiles as $file) {
-                $className = $this->getClassNameFromFile($file);
-                if ($className) {
-                    $blockClasses[] = '\\' . $className;
-                }
-            }
-            BlocksProvider::init($blockClasses);
+            $blocksNamespace = $settings['blocksNamespace'];
+            $scanNewClasses = $settings['scanNewClasses'];
+            $classes = ClassFinder::getClasses($blocksNamespace, $scanNewClasses);
+            BlocksProvider::init($classes);
         });
-    }
-
-    /**
-     * Extract a fully qualfied (namespaced) classname from a php file.
-     * This function assumes PSR-0 compliance.
-     *
-     * @param   string  $filePath   Path to the php file.
-     * @return  string|false        The resulting classname
-     */
-    private function getClassNameFromFile($filePath)
-    {
-        if (!file_exists($filePath)) {
-            return false;
-        }
-
-        $namespace  = null;
-        $classname  = null;
-        $cnMatches  = null;
-        $nsMatches  = null;
-        $file       = file_get_contents($filePath);
-
-        if (preg_match_all('/\n\s*(abstract\s|final\s)*class\s+(?<name>[^\s;]+)\s*/i', $file, $cnMatches, PREG_PATTERN_ORDER)) {
-            $classname  = array_pop($cnMatches['name']);
-
-            if (preg_match_all('/namespace\s+(?<name>[^\s;]+)\s*;/i', $file, $nsMatches, PREG_PATTERN_ORDER)) {
-                $namespace  = array_pop($nsMatches['name']);
-            }
-        }
-
-        if (empty($classname)) {
-            return false;
-        }
-
-        return "$namespace\\$classname";
     }
 
     protected function createSettingsModel(): ?Model

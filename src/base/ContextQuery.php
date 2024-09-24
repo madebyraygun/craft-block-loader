@@ -2,63 +2,170 @@
 
 namespace madebyraygun\blockloader\base;
 
-use craft\elements\ElementCollection;
 use craft\elements\Entry;
+use craft\elements\db\EntryQuery;
+use Illuminate\Support\Collection;
 
 class ContextQuery
 {
-    /**
-     * A collection of matrix fields after eager loading.
-     * The key is the matrix handle. All matrix blocks are eager loaded.
-     * @var array<string, ElementCollection>
-     */
-    private array $matrixFields;
+    public Entry $entry;
+    public string $fieldHandle;
+    public array $eagerFields;
+    public ?ContextCacheSet $cacheSet;
 
-    public function __construct(Entry $entry, array $blocks)
+    public function __construct(Entry $entry, string $fieldHandle)
     {
-        $this->matrixFields = $this->fetch($entry, $blocks);
+        $this->entry = $entry;
+        $this->fieldHandle = $fieldHandle;
+        $this->eagerFields = $this->mapEagerFields();
+        $this->cacheSet = null;
     }
 
-    public function findMatrixBlocks(ContextBlock $block): array
-    {
-        $matrixHandle = $block->settings->matrixHandle;
-        $blockHandle = $block->settings->blockHandle;
-        $collection = $this->matrixFields[$matrixHandle] ?? [];
-        $blocks = array_filter($collection, function($block) use ($blockHandle) {
-            return $block->type->handle === $blockHandle;
-        });
-        return array_values($blocks);
+    public function getFieldValue(): mixed {
+        return $this->entry->getFieldValue($this->fieldHandle);
     }
 
-    private static function fetch(Entry $entry, array $contextBlocks): array
-    {
-        $blocksSettings = static::mapBlocksSettings($contextBlocks);
-        $eagerFields = static::mapEagerFields($blocksSettings);
-        $matrixHandles = static::mapMatrixHandles($blocksSettings);
-        $matrixFields = static::queryMatrixFields($entry, $matrixHandles, $eagerFields);
-        return $matrixFields;
+    public function getFieldClass(): string {
+        return get_class($this->getFieldValue());
     }
 
-    private static function queryMatrixFields(Entry $entry, array $matrixHandles, array $eagerFields)
+    public function setContextCache(ContextCacheSet $cacheSet): void {
+        //TODO: if settings in the controllers have changed, we may need to reset the cache
+        $this->cacheSet = $cacheSet;
+    }
+
+    public function queryDescriptors(): Collection
     {
         $result = [];
-        foreach ($matrixHandles as $type) {
-            if (isset($entry->$type)) {
-                $blocks = $entry->$type->with($eagerFields)->all();
-                $result[$type] = $blocks;
-            }
+        switch ($this->getFieldClass()) {
+            case 'craft\ckeditor\data\FieldData':
+                $result = self::getDescriptorsFromCkeditor();
+                break;
+            case 'craft\elements\db\EntryQuery':
+                $result = self::getDescriptorsFromEntryQuery();
+                break;
+            default:
+                $result =  collect([]);
         }
-        return $result;
+        return $result
+            ->merge($this->cacheSet->all())
+            ->sort(fn($a, $b) => $a->order <=> $b->order)
+            ->values();
     }
 
-    private static function getEagerFields(ContextBlockSettings $settings)
+    private function getDescriptorsFromCkeditor(): Collection {
+        $field = $this->getFieldValue();
+        $chunks = $field->getChunks(false);
+        $wrappedChunks = $chunks->map(fn($chunk, int $idx) => [
+            'order' => $idx,
+            'data' => $chunk
+        ]);
+        $entryChunks = self::transformEntryChunks($wrappedChunks);
+        $markupChunks = self::transformMarkupChunks($wrappedChunks);
+        return $entryChunks->merge($markupChunks)->filter();
+    }
+
+    private function transformEntryChunks(Collection $chunks): Collection
+    {
+        $entryChunks = $chunks->filter(fn($chunk) => $chunk['data']->getType() === 'entry');
+        $entryIds = $entryChunks->pluck('data.entryId')->toArray();
+        $entries = $this->queryEntries(Entry::find(), $entryIds);
+        $descriptors = $entries->map(function($entry) use ($entryChunks) {
+            $contextBlock = BlocksFactory::createFromEntry($entry);
+            $chunk = $entryChunks->first(fn($chunk) => $chunk['data']->entryId === $entry->id);
+            if (!empty($contextBlock)) {
+                $context = $contextBlock->getContext($entry);
+                return new ContextDescriptor(
+                    $entry->id,
+                    $this->fieldHandle,
+                    $contextBlock->settings->templateHandle,
+                    $chunk['order'],
+                    $contextBlock->settings->cacheable,
+                    $context
+                );
+            }
+        });
+        return $descriptors;
+    }
+
+    private function transformMarkupChunks(Collection $chunks): Collection
+    {
+        $chunks = $chunks->filter(fn($chunk) => $chunk['data']->getType() === 'markup');
+        // remove cached chunks
+        $chunks = $chunks->filter(fn($chunk) => !$this->cacheSet->hasId('markup:' . $chunk['order']));
+        $descriptors = $chunks->map(function($chunk) {
+            // generate a default context for the markup
+            $context = [ 'content' => $chunk['data']->getHtml() ];
+            $templateHandle = 'markup';
+            $cacheable = false;
+            // try find if there is class to handle this field
+            $contextBlock = BlocksFactory::create('markup');
+            if ($contextBlock) {
+                $contextBlock->setEntry($this->entry);
+                $context = $contextBlock->getMarkupContext($chunk['data']);
+                $templateHandle = $contextBlock->settings->templateHandle;
+                $cacheable = $contextBlock->settings->cacheable;
+            }
+            $id = 'markup:' . $chunk['order'];
+            return new ContextDescriptor(
+                $id,
+                $this->fieldHandle,
+                $templateHandle,
+                $chunk['order'],
+                $cacheable,
+                $context
+            );
+        });
+        return $descriptors;
+    }
+
+    private function getDescriptorsFromEntryQuery(): Collection
+    {
+        $field = $this->getFieldValue();
+        $entries = $this->queryEntries($field);
+        $descriptors = $entries->map(function($entry) {
+            $contextBlock = BlocksFactory::createFromEntry($entry);
+            if (!empty($contextBlock)) {
+                $context = $contextBlock->getContext($entry);
+                return new ContextDescriptor(
+                    $entry->id,
+                    $this->fieldHandle,
+                    $contextBlock->settings->templateHandle,
+                    $entry->sortOrder,
+                    $contextBlock->settings->cacheable,
+                    $context
+                );
+            }
+        });
+        return $descriptors->filter();
+    }
+
+    private function queryEntries(EntryQuery $query, array $includeIds = []): Collection
+    {
+        $excludes = $this->cacheSet->getEntryIds()->toArray();
+        $idParam = ['not', ...$excludes];
+        if (!empty($includeIds)) {
+            // switch rule to include only by Ids
+            // remove from IncludeIds what is in excludes (cache)
+            $idParam = array_filter($includeIds, fn($id) => !in_array(strval($id), $excludes));
+            if (empty($idParam)) {
+                return collect([]);
+            }
+        }
+        return collect($query
+            ->id($idParam)
+            ->siteId($this->entry->siteId)
+            ->with($this->eagerFields)
+            ->all());
+    }
+
+    private function getEagerFields(ContextBlockSettings $settings)
     {
         $fields = [];
-        $matrixHandle = $settings->matrixHandle;
-        $blockHandle = $settings->blockHandle;
+        $childFieldHandle = $settings->fieldHandle;
         foreach ($settings->eagerFields as $field) {
             $name = is_array($field) ? $field[0] ?? '' : $field;
-            $prefixedField = $matrixHandle . '.' . $blockHandle . ':' . $name;
+            $prefixedField = $this->fieldHandle . '.' . $childFieldHandle . ':' . $name;
             if (is_array($field)) {
                 // handle array fields with custom params
                 $prefixedField = [$prefixedField, ...array_slice($field, 1)];
@@ -68,24 +175,13 @@ class ContextQuery
         return $fields;
     }
 
-    private static function mapMatrixHandles(array $blocksSettings)
+    private function mapEagerFields(): array
     {
-        return array_unique(array_map(function(ContextBlockSettings $settings) {
-            return $settings->matrixHandle;
-        }, $blocksSettings));
-    }
-
-    private static function mapEagerFields(array $blocksSettings): array
-    {
-        return array_unique(array_merge(...array_map(function(ContextBlockSettings $settings) {
-            return static::getEagerFields($settings);
-        }, $blocksSettings)));
-    }
-
-    private static function mapBlocksSettings(array $contextBlocks): array
-    {
-        return array_map(function(ContextBlock $block) {
-            return $block->settings;
-        }, $contextBlocks);
+        return BlocksFactory::getContextSettings()
+            ->pluck('settings')
+            ->map(fn(ContextBlockSettings $s) => $this->getEagerFields($s))
+            ->flatten()
+            ->unique()
+            ->toArray();
     }
 }

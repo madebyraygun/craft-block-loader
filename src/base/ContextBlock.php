@@ -7,26 +7,18 @@ use craft\helpers\StringHelper;
 
 abstract class ContextBlock
 {
+    public ?Entry $entry;
     public ContextBlockSettings $settings;
-    public Entry $entry;
 
-    abstract public function getContext(Entry $block): array;
-
-    protected function onInit(ContextBlockSettings $settings): void
+    public function __construct(Entry $entry = null)
     {
-        // override this method to set block settings
-    }
-
-    public function __construct(Entry $entry)
-    {
-        $this->entry = $entry;
-        $this->settings = new ContextBlockSettings();
         $handle = $this->getDefaultHandle();
-        $this->settings
-            ->blockHandle(lcfirst($handle))
-            ->contextHandle(StringHelper::toKebabCase($handle))
+        $this->entry = $entry;
+        $this->settings = (new ContextBlockSettings())
+            ->fieldHandle(lcfirst($handle))
+            ->templateHandle(StringHelper::toKebabCase($handle))
             ->cacheable(true);
-        $this->onInit($this->settings);
+        $this->setSettings();
     }
 
     public function getDefaultHandle(): string
@@ -36,10 +28,24 @@ abstract class ContextBlock
         return str_replace('Block', '', $className);
     }
 
-    public function __clone()
+    public function getContext(Entry $block): array
     {
-        $oldSettings = $this->settings;
-        $this->settings = new ContextBlockSettings();
-        $this->settings->copy($oldSettings);
+        return [];
+    }
+
+    public function getMarkupContext(string $markup): array
+    {
+        return [ 'content' => $markup ];
+    }
+
+    public function setEntry(Entry $entry): ContextBlock
+    {
+        $this->entry = $entry;
+        return $this;
+    }
+
+    public function setSettings(): void
+    {
+        // $this->settings
     }
 }
