@@ -110,7 +110,7 @@ class RichTextBlock extends ContextBlock
 }
 ```
 
-In your entry template:
+### In your entry template
 
 ```html
 {% set blocks = entry.blocksFromField('contentBlocks') %}
