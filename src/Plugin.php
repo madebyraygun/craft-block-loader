@@ -44,13 +44,13 @@ class Plugin extends BasePlugin
     {
         parent::init();
         self::$plugin = $this;
-        Craft::setAlias('@madebyraygun/block-loader', $this->getBasePath());
+        Craft::setAlias('@madebyraygun/blockloader', $this->getBasePath());
 
         // Set the controllerNamespace based on whether this is a console or web request
         if (Craft::$app->request->isConsoleRequest) {
-            $this->controllerNamespace = 'madebyraygyn\\blockloader\\console\\controllers';
+            $this->controllerNamespace = 'madebyraygun\\blockloader\\console\\controllers';
         } else {
-            $this->controllerNamespace = 'madebyraygyn\\blockloader\\controllers';
+            $this->controllerNamespace = 'madebyraygun\\blockloader\\controllers';
         }
 
         $this->registerLogger();
