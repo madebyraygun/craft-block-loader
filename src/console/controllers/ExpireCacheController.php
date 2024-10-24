@@ -23,35 +23,36 @@ class ExpireCacheController extends Controller
      */
     public function actionAll(): int
     {
+        $lastRun = ExpireCacheRecord::find()->orderBy('dateCleared DESC')->limit(1)->one();
+        $lastRunDate = $lastRun ? strtotime($lastRun->dateCleared) : null;
         $entries = Entry::find()
-            ->status('expired')
-            ->all();
+            ->status('expired');
 
+        if ($lastRunDate) $entries->expiryDate('>= ' .  date("Y-m-d H:i:s", $lastRunDate));
+        $entries = $entries->all();
         if (empty($entries)) {
-            $this->stdout("No expired entries found", Console::FG_GREEN);
+            $this->stdout('No new expired entries found' . PHP_EOL, Console::FG_GREEN);
         }
 
         foreach ($entries as $expired) {
             $entryId = $expired->id;
             $exists = ExpireCacheRecord::find()->where(['entryId' => $entryId])->one();
-            if ($exists) {
-                $this->stderr('Cache already cleared for entry ID ' . $entryId . PHP_EOL, Console::FG_RED);
-                continue;
-            }
             ContextCache::clear($expired);
-            $record = new ExpireCacheRecord();
             $model = new ExpireCacheModel(
                 [
-                    'entryId' => $entryId
+                    'entryId' => $entryId,
+                    'dateCleared' => new \DateTime()
                 ]
             );
             if (!$model->validate()) {
                 $this->stderr('Validation failed for entry ID ' . $entryId . PHP_EOL, Console::FG_RED);
                 return ExitCode::DATAERR;
             }
+            $record = $exists ?: new ExpireCacheRecord();
             $record->entryId = $entryId;
+            $record->dateCleared = $model->dateCleared;
             $record->save();
-            $this->stdout("Cache cleared for {$entryId}", Console::FG_GREEN);
+            $this->stdout('Cache cleared for ' . $entryId . PHP_EOL, Console::FG_GREEN);
         }
 
         return ExitCode::OK;

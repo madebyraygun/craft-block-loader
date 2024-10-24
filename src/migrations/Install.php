@@ -23,7 +23,9 @@ class Install extends Migration
     {
         $this->archiveTableIfExists(ExpireCacheRecord::tableName());
         $this->createTable(ExpireCacheRecord::tableName(), [
-            'entryId' => $this->integer(),
+            'id' => $this->primaryKey(),
+            'entryId' => $this->integer()->notNull(),
+            'dateCleared' => $this->dateTime()->notNull(),
         ]);
     }
 }
