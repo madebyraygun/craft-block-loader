@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.0 - 2024-10-24
+
+### Added
+
+- Console command to clear block cache for entries related to expired entries
+
 ## 3.0.0 - 2024-09-23
 
 ### Added

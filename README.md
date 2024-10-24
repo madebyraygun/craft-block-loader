@@ -126,6 +126,9 @@ If you need to clear the cache globally for all entries, you can do so from the 
 
 Additionally you can disable the caching for all blocks entirely by setting the `enableCaching` setting to `false` in the `block-loader.php` config file. This is useful for development environments where you want to see changes to your blocks immediately. But you may want to enable caching in production to improve performance.
 
+### Expired entries
+
+When an asset or an entry is saved, the cache is automatically cleared for related entries, but this action doesn't run when an entry expires rather than being saved. If you use the expiration feature and are concerned about expired entries showing up in related content blocks, use the console command `craft block-loader/expire-cache` to clear the block-loader cache specifically for entries that are related to entries that have expired since the last time the command was run.
 
 ## Ckeditor Fields
 You can call `blocksFromField` function on an entry indistinctly of the field type (`Matrix` or `Ckeditor`). The plugin will automatically detect the field type and return the blocks in the same format. However, for `Ckeditor` fields the `markup` is by default wrapped as a block, you can pass the context into a specific component or just render the `markup` directly.
@@ -158,4 +161,32 @@ class MarkupBlock extends ContextBlock
         ];
     }
 }
+```
+
+### Nested entries within a matrix field
+
+If you're using the CKEditor nested entries feature _within another matrix field_, be sure to extract the context for the nested entries within the context for that block:
+
+```php
+public function getContext(Entry $block): array
+{
+    $blocks = BlocksProvider::extractBlockDescriptors($block, 'body');
+    return [
+        'blocks' => $blocks,
+    ];
+}
+```
+
+The markup for your rich text component will look similar to the CkEditor example above:
+
+```twig
+<div class="content-block--rich-text__content" >
+  {% for item in blocks %}
+    {% if item.templateHandle == 'markup' %}
+      {{ item.context.content|raw }}
+    {% else %}
+      {% include '@content-blocks/' ~ item.templateHandle with item.context %}
+    {% endif %}
+  {% endfor %}
+</div>
 ```
