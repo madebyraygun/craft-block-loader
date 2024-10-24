@@ -1,7 +1,7 @@
 {
   "name": "madebyraygun/craft-block-loader",
   "description": "Context loader for Craft CMS matrix blocks and nested entries.",
-  "version": "3.0.1",
+  "version": "3.1.0",
   "type": "craft-plugin",
   "require": {
     "php": ">=8.2.0",

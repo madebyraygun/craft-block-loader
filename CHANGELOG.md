@@ -6,6 +6,10 @@
 
 - Console command to clear block cache for entries related to expired entries
 
+### Documentation
+
+- Added examploe for CkEditor nested entries inside matrix blocks
+
 ## 3.0.0 - 2024-09-23
 
 ### Added
