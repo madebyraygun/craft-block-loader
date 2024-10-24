@@ -53,7 +53,7 @@ class ContextCache
         return $descriptors->filter(fn($descriptor) => $descriptor->cacheable);
     }
 
-    private static function clearRelations(mixed $element): void
+    public static function clearRelations(mixed $element): void
     {
         $entries = Entry::find()
             ->relatedTo($element)
