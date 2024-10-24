@@ -2,8 +2,8 @@
 
 namespace madebyraygun\blockloader\base;
 
-use craft\elements\Entry;
 use craft\elements\db\EntryQuery;
+use craft\elements\Entry;
 use Illuminate\Support\Collection;
 
 class ContextQuery
@@ -21,15 +21,18 @@ class ContextQuery
         $this->cacheSet = null;
     }
 
-    public function getFieldValue(): mixed {
+    public function getFieldValue(): mixed
+    {
         return $this->entry->getFieldValue($this->fieldHandle);
     }
 
-    public function getFieldClass(): string {
+    public function getFieldClass(): string
+    {
         return get_class($this->getFieldValue());
     }
 
-    public function setContextCache(ContextCacheSet $cacheSet): void {
+    public function setContextCache(ContextCacheSet $cacheSet): void
+    {
         //TODO: if settings in the controllers have changed, we may need to reset the cache
         $this->cacheSet = $cacheSet;
     }
@@ -45,7 +48,7 @@ class ContextQuery
                 $result = self::getDescriptorsFromEntryQuery();
                 break;
             default:
-                $result =  collect([]);
+                $result = collect([]);
         }
         return $result
             ->merge($this->cacheSet->all())
@@ -53,12 +56,13 @@ class ContextQuery
             ->values();
     }
 
-    private function getDescriptorsFromCkeditor(): Collection {
+    private function getDescriptorsFromCkeditor(): Collection
+    {
         $field = $this->getFieldValue();
         $chunks = $field->getChunks(false);
         $wrappedChunks = $chunks->map(fn($chunk, int $idx) => [
             'order' => $idx,
-            'data' => $chunk
+            'data' => $chunk,
         ]);
         $entryChunks = self::transformEntryChunks($wrappedChunks);
         $markupChunks = self::transformMarkupChunks($wrappedChunks);

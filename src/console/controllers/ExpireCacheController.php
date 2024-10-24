@@ -2,14 +2,13 @@
 
 namespace madebyraygun\blockloader\console\controllers;
 
-use Craft;
 use craft\console\Controller;
-use craft\helpers\Console;
 use craft\elements\Entry;
-use yii\console\ExitCode;
+use craft\helpers\Console;
 use madebyraygun\blockloader\base\ContextCache;
 use madebyraygun\blockloader\models\ExpireCacheModel;
 use madebyraygun\blockloader\records\ExpireCacheRecord;
+use yii\console\ExitCode;
 
 /**
  * Expire Cache Controller
@@ -28,7 +27,9 @@ class ExpireCacheController extends Controller
         $entries = Entry::find()
             ->status('expired');
 
-        if ($lastRunDate) $entries->expiryDate('>= ' .  date("Y-m-d H:i:s", $lastRunDate));
+        if ($lastRunDate) {
+            $entries->expiryDate('>= ' . date("Y-m-d H:i:s", $lastRunDate));
+        }
         $entries = $entries->all();
         if (empty($entries)) {
             $this->stdout('No new expired entries found' . PHP_EOL, Console::FG_GREEN);
@@ -41,7 +42,7 @@ class ExpireCacheController extends Controller
             $model = new ExpireCacheModel(
                 [
                     'entryId' => $entryId,
-                    'dateCleared' => new \DateTime()
+                    'dateCleared' => new \DateTime(),
                 ]
             );
             if (!$model->validate()) {

@@ -3,12 +3,12 @@
 namespace madebyraygun\blockloader\base;
 
 use Craft;
-use yii\base\Event;
 use craft\elements\Asset;
 use craft\elements\Entry;
 use craft\events\ModelEvent;
 use Illuminate\Support\Collection;
 use madebyraygun\blockloader\Plugin;
+use yii\base\Event;
 
 class ContextCache
 {

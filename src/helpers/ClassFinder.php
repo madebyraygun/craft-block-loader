@@ -7,7 +7,6 @@ use Composer\ClassMapGenerator\ClassMapGenerator;
 
 class ClassFinder
 {
-
     private static ClassLoader $classLoader;
 
     public static function getClasses(string $namespace, bool $scanNewFiles): array

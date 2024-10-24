@@ -3,8 +3,8 @@
 namespace madebyraygun\blockloader\services;
 
 use Craft;
-use yii\caching\FileCache;
 use craft\helpers\FileHelper;
+use yii\caching\FileCache;
 
 class BlocksFileCache extends FileCache
 {
