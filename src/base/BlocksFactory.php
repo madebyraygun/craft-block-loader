@@ -2,16 +2,16 @@
 
 namespace madebyraygun\blockloader\base;
 
-use Illuminate\Support\Collection;
 use craft\elements\Entry;
+use Illuminate\Support\Collection;
 
 class BlocksFactory
 {
-
     public static array $classes = [];
     private static ?Collection $contextSettings = null;
 
-    public static function init(array $classes): void {
+    public static function init(array $classes): void
+    {
         self::$classes = $classes;
     }
 
@@ -21,7 +21,7 @@ class BlocksFactory
         if (!$class) {
             return null;
         }
-        return new $class;
+        return new $class();
     }
 
     public static function createFromEntry(Entry $entry): ?ContextBlock
@@ -34,15 +34,16 @@ class BlocksFactory
         return $contextBlock;
     }
 
-    public static function getContextSettings(): Collection {
+    public static function getContextSettings(): Collection
+    {
         if (self::$contextSettings === null) {
             $result = collect([]);
             foreach (self::$classes as $cls) {
                 if (is_subclass_of($cls, ContextBlock::class)) {
-                    $ctxBlock = new $cls;
+                    $ctxBlock = new $cls();
                     $result->push([
                         'class' => $cls,
-                        'settings' => $ctxBlock->settings
+                        'settings' => $ctxBlock->settings,
                     ]);
                 }
             }
@@ -51,7 +52,8 @@ class BlocksFactory
         return self::$contextSettings;
     }
 
-    public static function findHandlerClass(string $handle): ?string {
+    public static function findHandlerClass(string $handle): ?string
+    {
         $settings = self::getContextSettings()->firstWhere('settings.fieldHandle', $handle);
         return $settings['class'] ?? null;
     }

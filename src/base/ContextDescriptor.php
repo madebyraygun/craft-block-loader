@@ -17,9 +17,8 @@ class ContextDescriptor
         string $templateHandle,
         int $order,
         bool $cacheable,
-        array $context
-    )
-    {
+        array $context,
+    ) {
         $this->id = $id;
         $this->fieldHandle = $fieldHandle;
         $this->templateHandle = $templateHandle;

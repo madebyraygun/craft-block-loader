@@ -2,10 +2,9 @@
 
 namespace madebyraygun\blockloader\behaviors;
 
-use Craft;
-use yii\base\Behavior;
-use madebyraygun\blockloader\base\BlocksProvider;
 use Illuminate\Support\Collection;
+use madebyraygun\blockloader\base\BlocksProvider;
+use yii\base\Behavior;
 
 class BlocksLoaderBehavior extends Behavior
 {

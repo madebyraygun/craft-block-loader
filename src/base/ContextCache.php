@@ -3,12 +3,12 @@
 namespace madebyraygun\blockloader\base;
 
 use Craft;
-use yii\base\Event;
 use craft\elements\Asset;
 use craft\elements\Entry;
 use craft\events\ModelEvent;
 use Illuminate\Support\Collection;
 use madebyraygun\blockloader\Plugin;
+use yii\base\Event;
 
 class ContextCache
 {
@@ -53,7 +53,7 @@ class ContextCache
         return $descriptors->filter(fn($descriptor) => $descriptor->cacheable);
     }
 
-    private static function clearRelations(mixed $element): void
+    public static function clearRelations(mixed $element): void
     {
         $entries = Entry::find()
             ->relatedTo($element)

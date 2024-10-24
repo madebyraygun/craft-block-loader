@@ -3,8 +3,6 @@
 namespace madebyraygun\blockloader\base;
 
 use craft\elements\Entry;
-use madebyraygun\blockloader\base\ContextQuery;
-use madebyraygun\blockloader\base\BlocksFactory;
 use Illuminate\Support\Collection;
 
 class BlocksProvider

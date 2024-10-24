@@ -3,19 +3,19 @@
 namespace madebyraygun\blockloader;
 
 use Craft;
-use yii\base\Event;
 use craft\base\Model;
 use craft\base\Plugin as BasePlugin;
-use craft\events\DefineBehaviorsEvent;
 use craft\elements\Entry;
+use craft\events\DefineBehaviorsEvent;
 use craft\events\RegisterCacheOptionsEvent;
 use craft\utilities\ClearCaches;
-use madebyraygun\blockloader\helpers\ClassFinder;
-use madebyraygun\blockloader\behaviors\BlocksLoaderBehavior;
 use madebyraygun\blockloader\base\BlocksProvider;
 use madebyraygun\blockloader\base\PluginLogTrait;
+use madebyraygun\blockloader\behaviors\BlocksLoaderBehavior;
+use madebyraygun\blockloader\helpers\ClassFinder;
 use madebyraygun\blockloader\models\Settings;
 use madebyraygun\blockloader\services\BlocksFileCache;
+use yii\base\Event;
 
 /**
  * craft-block-loader Plugin
@@ -32,7 +32,8 @@ class Plugin extends BasePlugin
 
     use PluginLogTrait;
 
-    public static function config(): array {
+    public static function config(): array
+    {
         return [
             'components' => [
                 'cache' => BlocksFileCache::class,
@@ -73,7 +74,7 @@ class Plugin extends BasePlugin
                     'info' => 'Cached data for blocks contexts in: ' . $cachePath,
                     'action' => function() {
                         $this->cache->flush();
-                    }
+                    },
                 ];
             }
         );
