@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.3 - 2025-6-28
+
+### Fixed
+
+- Duplicate block cache entries on multi-site config [https://github.com/madebyraygun/craft-block-loader/issues/18](#18)
+
 ## 3.1.2 - 2025-2-28
 
 ### Fixed
