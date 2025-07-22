@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.1.4 - 2025-07-22
+
+### Fixed
+
+- Fix multi-site cache key bug introduced in [https://github.com/madebyraygun/craft-block-loader/commit/fc85198a81d9c6d976f1d16b9fc79dae9d68eb15](https://github.com/madebyraygun/craft-block-loader/commit/fc85198a81d9c6d976f1d16b9fc79dae9d68eb15) [https://github.com/madebyraygun/craft-block-loader/issues/20](#20)
+
+
 ## 3.1.3 - 2025-6-28
 
 ### Fixed
