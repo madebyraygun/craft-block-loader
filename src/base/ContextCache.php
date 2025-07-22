@@ -16,8 +16,7 @@ class ContextCache
 
     private static function getKey(Entry $entry): string
     {
-        $site = Craft::$app->getSites()->getCurrentSite();
-        return strval($entry->id) . '-' . $site->id;
+        return strval($entry->id) . '-' . strval($entry->siteId);
     }
 
     public static function set(Entry $entry, Collection $descriptors): void
