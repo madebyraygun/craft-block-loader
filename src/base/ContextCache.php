@@ -3,6 +3,7 @@
 namespace madebyraygun\blockloader\base;
 
 use Craft;
+use craft\base\Element;
 use craft\elements\Asset;
 use craft\elements\Entry;
 use craft\events\ModelEvent;
@@ -14,9 +15,9 @@ class ContextCache
 {
     private static $CACHE = null;
 
-    private static function getKey(Entry $entry): string
+    private static function getKey(Element $element): string
     {
-        return strval($entry->id) . '-' . strval($entry->siteId);
+        return strval($element->id) . '-' . strval($element->siteId);
     }
 
     public static function set(Entry $entry, Collection $descriptors): void
@@ -42,9 +43,9 @@ class ContextCache
         return static::$CACHE;
     }
 
-    public static function clear(Entry $entry): void
+    public static function clear(Element $element): void
     {
-        $key = static::getKey($entry);
+        $key = static::getKey($element);
         Plugin::$plugin->cache->delete($key);
     }
 
