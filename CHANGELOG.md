@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.6 - 2026-02-17
+
+### Fixed
+
+- Handle non-serializable objects in block context cache gracefully instead of throwing an exception ([#11](https://github.com/madebyraygun/craft-block-loader/issues/11))
+
 ## 3.1.4 - 2025-07-22
 
 ### Fixed
