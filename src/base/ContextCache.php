@@ -26,7 +26,13 @@ class ContextCache
             return;
         }
         $key = static::getKey($entry);
-        Plugin::$plugin->cache->set($key, serialize($descriptors->toArray()));
+        try {
+            $serialized = serialize($descriptors->toArray());
+        } catch (\Exception $e) {
+            Craft::warning("Block loader cache skipped for entry {$entry->id}: {$e->getMessage()}", __METHOD__);
+            return;
+        }
+        Plugin::$plugin->cache->set($key, $serialized);
     }
 
     public static function get(Entry $entry): ?Collection
