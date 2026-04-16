@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.7 - 2026-04-16
+
+### Fixed
+
+- Defer cache invalidation to end of request to prevent timeouts on entries with many nested elements ([#25](https://github.com/madebyraygun/craft-block-loader/issues/25))
+- Add `site('*')` to relation queries for correct multi-site cache invalidation
+- Console and queue contexts fall back to immediate invalidation since `EVENT_AFTER_REQUEST` doesn't fire
+
 ## 3.1.6 - 2026-02-17
 
 ### Fixed
