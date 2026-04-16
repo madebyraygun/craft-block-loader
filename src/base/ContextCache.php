@@ -9,11 +9,20 @@ use craft\elements\Entry;
 use craft\events\ModelEvent;
 use Illuminate\Support\Collection;
 use madebyraygun\blockloader\Plugin;
+use yii\base\Application;
 use yii\base\Event;
 
 class ContextCache
 {
     private static $CACHE = null;
+
+    /**
+     * Elements queued for deferred cache invalidation.
+     * Processed once at end of request instead of per-element.
+     */
+    private static array $pendingClears = [];
+    private static array $pendingRelationElements = [];
+    private static bool $deferredHandlerRegistered = false;
 
     private static function getKey(Element $element): string
     {
@@ -81,19 +90,90 @@ class ContextCache
         }
     }
 
+    /**
+     * Register the end-of-request handler that processes all deferred invalidations.
+     */
+    private static function ensureDeferredHandler(): void
+    {
+        if (static::$deferredHandlerRegistered) {
+            return;
+        }
+        static::$deferredHandlerRegistered = true;
+
+        Event::on(Application::class, Application::EVENT_AFTER_REQUEST, function() {
+            static::processDeferredInvalidation();
+        });
+    }
+
+    /**
+     * Queue an element for deferred cache clear + relation invalidation.
+     */
+    private static function queueClear(Element $element): void
+    {
+        $key = static::getKey($element);
+        static::$pendingClears[$key] = $element;
+    }
+
+    /**
+     * Queue an element whose relations need deferred invalidation.
+     */
+    private static function queueRelationClear(Element $element): void
+    {
+        $key = $element->id . '-' . ($element instanceof Entry ? 'entry' : 'asset');
+        static::$pendingRelationElements[$key] = $element;
+    }
+
+    /**
+     * Process all deferred cache invalidations in a single pass.
+     */
+    private static function processDeferredInvalidation(): void
+    {
+        // 1. Clear directly queued elements
+        foreach (static::$pendingClears as $element) {
+            static::clear($element);
+        }
+
+        // 2. Batch-clear relations for all queued elements
+        if (!empty(static::$pendingRelationElements)) {
+            $elements = array_values(static::$pendingRelationElements);
+            $entries = Entry::find()
+                ->relatedTo($elements)
+                ->all();
+
+            $cleanedIds = [];
+            foreach ($entries as $entry) {
+                if (in_array($entry->id, $cleanedIds)) {
+                    continue;
+                }
+                $cleanedIds[] = $entry->id;
+                static::clear($entry);
+                if ($entry->owner && !in_array($entry->ownerId, $cleanedIds)) {
+                    $cleanedIds[] = $entry->ownerId;
+                    static::clear($entry->owner);
+                }
+            }
+        }
+
+        // Reset state
+        static::$pendingClears = [];
+        static::$pendingRelationElements = [];
+    }
+
     public static function attachEventHandlers(): void
     {
-        // Handle Asset saves
+        static::ensureDeferredHandler();
+
+        // Handle Asset saves — defer relation clearing
         Event::on(Asset::class, Asset::EVENT_AFTER_SAVE, function(ModelEvent $event) {
             $asset = $event->sender;
-            static::clearRelations($asset);
+            static::queueRelationClear($asset);
         });
 
-        // Handle Entry saves
+        // Handle Entry saves — defer both direct clear and relation clearing
         Event::on(Entry::class, Entry::EVENT_AFTER_SAVE, function(ModelEvent $event) {
             $entry = $event->sender;
-            static::clear($entry);
-            static::clearRelations($entry);
+            static::queueClear($entry);
+            static::queueRelationClear($entry);
         });
     }
 }
