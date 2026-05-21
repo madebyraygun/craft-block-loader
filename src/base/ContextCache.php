@@ -82,6 +82,9 @@ class ContextCache
         if (ElementHelper::isDraftOrRevision($element)) {
             return true;
         }
+        if ($element->propagating) {
+            return true;
+        }
         return false;
     }
 
