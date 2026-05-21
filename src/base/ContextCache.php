@@ -74,8 +74,7 @@ class ContextCache
      * Returns true when the save can't affect the live block-loader cache and
      * invalidation should be skipped entirely.
      *
-     * Pure function of element state. Called at the top of every
-     * EVENT_AFTER_SAVE listener; no side effects.
+     * Read-only; safe to call from event handlers.
      */
     public static function shouldSkipInvalidation(Element $element): bool
     {
@@ -92,8 +91,11 @@ class ContextCache
             return true;
         }
         if ($element instanceof Entry && $element->getStatus() !== Entry::STATUS_LIVE) {
+            // These attributes drive Entry::getStatus(); if any is dirty, the
+            // save may be transitioning the entry into or out of STATUS_LIVE
+            // and we can't skip invalidation.
             $dirty = $element->getDirtyAttributes();
-            foreach (['enabled', 'postDate', 'expiryDate'] as $attr) {
+            foreach (['enabled', 'enabledForSite', 'postDate', 'expiryDate'] as $attr) {
                 if (in_array($attr, $dirty, true)) {
                     return false;
                 }
