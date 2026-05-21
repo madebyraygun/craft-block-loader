@@ -91,6 +91,15 @@ class ContextCache
         if ($element instanceof Asset && $element->getScenario() === Asset::SCENARIO_INDEX) {
             return true;
         }
+        if ($element instanceof Entry && $element->getStatus() !== Entry::STATUS_LIVE) {
+            $dirty = $element->getDirtyAttributes();
+            foreach (['enabled', 'postDate', 'expiryDate'] as $attr) {
+                if (in_array($attr, $dirty, true)) {
+                    return false;
+                }
+            }
+            return true;
+        }
         return false;
     }
 

@@ -61,4 +61,95 @@ final class ContextCacheTest extends TestCase
 
         self::assertTrue(ContextCache::shouldSkipInvalidation($asset));
     }
+
+    public function testSkipsDisabledEntryWhenNoTransition(): void
+    {
+        $entry = $this->createMock(Entry::class);
+        $entry->method('getIsDraft')->willReturn(false);
+        $entry->method('getIsRevision')->willReturn(false);
+        $entry->method('getStatus')->willReturn(Entry::STATUS_DISABLED);
+        $entry->method('getDirtyAttributes')->willReturn(['title']);
+        $entry->propagating = false;
+        $entry->resaving = false;
+
+        self::assertTrue(ContextCache::shouldSkipInvalidation($entry));
+    }
+
+    public function testDoesNotSkipDisabledEntryWhenEnabledIsDirty(): void
+    {
+        $entry = $this->createMock(Entry::class);
+        $entry->method('getIsDraft')->willReturn(false);
+        $entry->method('getIsRevision')->willReturn(false);
+        $entry->method('getStatus')->willReturn(Entry::STATUS_DISABLED);
+        $entry->method('getDirtyAttributes')->willReturn(['enabled']);
+        $entry->propagating = false;
+        $entry->resaving = false;
+
+        self::assertFalse(ContextCache::shouldSkipInvalidation($entry));
+    }
+
+    public function testDoesNotSkipDisabledEntryWhenPostDateIsDirty(): void
+    {
+        $entry = $this->createMock(Entry::class);
+        $entry->method('getIsDraft')->willReturn(false);
+        $entry->method('getIsRevision')->willReturn(false);
+        $entry->method('getStatus')->willReturn(Entry::STATUS_PENDING);
+        $entry->method('getDirtyAttributes')->willReturn(['postDate']);
+        $entry->propagating = false;
+        $entry->resaving = false;
+
+        self::assertFalse(ContextCache::shouldSkipInvalidation($entry));
+    }
+
+    public function testDoesNotSkipDisabledEntryWhenExpiryDateIsDirty(): void
+    {
+        $entry = $this->createMock(Entry::class);
+        $entry->method('getIsDraft')->willReturn(false);
+        $entry->method('getIsRevision')->willReturn(false);
+        $entry->method('getStatus')->willReturn(Entry::STATUS_EXPIRED);
+        $entry->method('getDirtyAttributes')->willReturn(['expiryDate']);
+        $entry->propagating = false;
+        $entry->resaving = false;
+
+        self::assertFalse(ContextCache::shouldSkipInvalidation($entry));
+    }
+
+    public function testSkipsPendingEntryWhenNoTransition(): void
+    {
+        $entry = $this->createMock(Entry::class);
+        $entry->method('getIsDraft')->willReturn(false);
+        $entry->method('getIsRevision')->willReturn(false);
+        $entry->method('getStatus')->willReturn(Entry::STATUS_PENDING);
+        $entry->method('getDirtyAttributes')->willReturn([]);
+        $entry->propagating = false;
+        $entry->resaving = false;
+
+        self::assertTrue(ContextCache::shouldSkipInvalidation($entry));
+    }
+
+    public function testDoesNotSkipLiveEntry(): void
+    {
+        $entry = $this->createMock(Entry::class);
+        $entry->method('getIsDraft')->willReturn(false);
+        $entry->method('getIsRevision')->willReturn(false);
+        $entry->method('getStatus')->willReturn(Entry::STATUS_LIVE);
+        $entry->method('getDirtyAttributes')->willReturn(['title']);
+        $entry->propagating = false;
+        $entry->resaving = false;
+
+        self::assertFalse(ContextCache::shouldSkipInvalidation($entry));
+    }
+
+    public function testDoesNotSkipLiveEntryEvenWithTransitionAttrDirty(): void
+    {
+        $entry = $this->createMock(Entry::class);
+        $entry->method('getIsDraft')->willReturn(false);
+        $entry->method('getIsRevision')->willReturn(false);
+        $entry->method('getStatus')->willReturn(Entry::STATUS_LIVE);
+        $entry->method('getDirtyAttributes')->willReturn(['expiryDate']);
+        $entry->propagating = false;
+        $entry->resaving = false;
+
+        self::assertFalse(ContextCache::shouldSkipInvalidation($entry));
+    }
 }
