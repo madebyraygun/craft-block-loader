@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.8 - 2026-05-21
+
+### Fixed
+
+- Skip cache invalidation entirely for saves that can't affect the live cache: drafts, revisions, propagating saves, bulk resaves, asset indexer passes, and non-live entries with no live-ness transition ([#27](https://github.com/madebyraygun/craft-block-loader/issues/27)). Eliminates the expensive `relatedTo()` fan-out on the common-case "no-op" save path (autosave on a draft, console resave, multi-site propagation).
+
 ## 3.1.7 - 2026-04-16
 
 ### Fixed
