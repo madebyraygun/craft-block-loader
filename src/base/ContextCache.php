@@ -7,6 +7,7 @@ use craft\base\Element;
 use craft\elements\Asset;
 use craft\elements\Entry;
 use craft\events\ModelEvent;
+use craft\helpers\ElementHelper;
 use Illuminate\Support\Collection;
 use madebyraygun\blockloader\Plugin;
 use yii\base\Application;
@@ -67,6 +68,21 @@ class ContextCache
     public static function filterCacheableDescriptors(Collection $descriptors): Collection
     {
         return $descriptors->filter(fn($descriptor) => $descriptor->cacheable);
+    }
+
+    /**
+     * Returns true when the save can't affect the live block-loader cache and
+     * invalidation should be skipped entirely.
+     *
+     * Pure function of element state. Called at the top of every
+     * EVENT_AFTER_SAVE listener; no side effects.
+     */
+    public static function shouldSkipInvalidation(Element $element): bool
+    {
+        if (ElementHelper::isDraftOrRevision($element)) {
+            return true;
+        }
+        return false;
     }
 
     public static function clearRelations(mixed $element): void
