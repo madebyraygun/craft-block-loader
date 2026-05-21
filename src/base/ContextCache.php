@@ -7,6 +7,7 @@ use craft\base\Element;
 use craft\elements\Asset;
 use craft\elements\Entry;
 use craft\events\ModelEvent;
+use craft\helpers\ElementHelper;
 use Illuminate\Support\Collection;
 use madebyraygun\blockloader\Plugin;
 use yii\base\Application;
@@ -67,6 +68,41 @@ class ContextCache
     public static function filterCacheableDescriptors(Collection $descriptors): Collection
     {
         return $descriptors->filter(fn($descriptor) => $descriptor->cacheable);
+    }
+
+    /**
+     * Returns true when the save can't affect the live block-loader cache and
+     * invalidation should be skipped entirely.
+     *
+     * Read-only; safe to call from event handlers.
+     */
+    public static function shouldSkipInvalidation(Element $element): bool
+    {
+        if (ElementHelper::isDraftOrRevision($element)) {
+            return true;
+        }
+        if ($element->propagating) {
+            return true;
+        }
+        if ($element->resaving) {
+            return true;
+        }
+        if ($element instanceof Asset && $element->getScenario() === Asset::SCENARIO_INDEX) {
+            return true;
+        }
+        if ($element instanceof Entry && $element->getStatus() !== Entry::STATUS_LIVE) {
+            // These attributes drive Entry::getStatus(); if any is dirty, the
+            // save may be transitioning the entry into or out of STATUS_LIVE
+            // and we can't skip invalidation.
+            $dirty = $element->getDirtyAttributes();
+            foreach (['enabled', 'enabledForSite', 'postDate', 'expiryDate'] as $attr) {
+                if (in_array($attr, $dirty, true)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     public static function clearRelations(mixed $element): void
@@ -175,9 +211,15 @@ class ContextCache
         // Console/queue: use immediate invalidation (EVENT_AFTER_REQUEST doesn't fire)
         if (Craft::$app->request->isConsoleRequest) {
             Event::on(Asset::class, Asset::EVENT_AFTER_SAVE, function(ModelEvent $event) {
+                if (static::shouldSkipInvalidation($event->sender)) {
+                    return;
+                }
                 static::clearRelations($event->sender);
             });
             Event::on(Entry::class, Entry::EVENT_AFTER_SAVE, function(ModelEvent $event) {
+                if (static::shouldSkipInvalidation($event->sender)) {
+                    return;
+                }
                 static::clear($event->sender);
                 static::clearRelations($event->sender);
             });
@@ -188,10 +230,16 @@ class ContextCache
         static::ensureDeferredHandler();
 
         Event::on(Asset::class, Asset::EVENT_AFTER_SAVE, function(ModelEvent $event) {
+            if (static::shouldSkipInvalidation($event->sender)) {
+                return;
+            }
             static::queueRelationClear($event->sender);
         });
 
         Event::on(Entry::class, Entry::EVENT_AFTER_SAVE, function(ModelEvent $event) {
+            if (static::shouldSkipInvalidation($event->sender)) {
+                return;
+            }
             static::queueClear($event->sender);
             static::queueRelationClear($event->sender);
         });
