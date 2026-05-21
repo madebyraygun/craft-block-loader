@@ -209,9 +209,15 @@ class ContextCache
         // Console/queue: use immediate invalidation (EVENT_AFTER_REQUEST doesn't fire)
         if (Craft::$app->request->isConsoleRequest) {
             Event::on(Asset::class, Asset::EVENT_AFTER_SAVE, function(ModelEvent $event) {
+                if (static::shouldSkipInvalidation($event->sender)) {
+                    return;
+                }
                 static::clearRelations($event->sender);
             });
             Event::on(Entry::class, Entry::EVENT_AFTER_SAVE, function(ModelEvent $event) {
+                if (static::shouldSkipInvalidation($event->sender)) {
+                    return;
+                }
                 static::clear($event->sender);
                 static::clearRelations($event->sender);
             });
@@ -222,10 +228,16 @@ class ContextCache
         static::ensureDeferredHandler();
 
         Event::on(Asset::class, Asset::EVENT_AFTER_SAVE, function(ModelEvent $event) {
+            if (static::shouldSkipInvalidation($event->sender)) {
+                return;
+            }
             static::queueRelationClear($event->sender);
         });
 
         Event::on(Entry::class, Entry::EVENT_AFTER_SAVE, function(ModelEvent $event) {
+            if (static::shouldSkipInvalidation($event->sender)) {
+                return;
+            }
             static::queueClear($event->sender);
             static::queueRelationClear($event->sender);
         });
