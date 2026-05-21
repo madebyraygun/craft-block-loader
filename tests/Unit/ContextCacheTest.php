@@ -38,4 +38,15 @@ final class ContextCacheTest extends TestCase
 
         self::assertTrue(ContextCache::shouldSkipInvalidation($entry));
     }
+
+    public function testSkipsBulkResaves(): void
+    {
+        $entry = $this->createMock(Entry::class);
+        $entry->method('getIsDraft')->willReturn(false);
+        $entry->method('getIsRevision')->willReturn(false);
+        $entry->propagating = false;
+        $entry->resaving = true;
+
+        self::assertTrue(ContextCache::shouldSkipInvalidation($entry));
+    }
 }

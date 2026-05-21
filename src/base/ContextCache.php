@@ -85,6 +85,9 @@ class ContextCache
         if ($element->propagating) {
             return true;
         }
+        if ($element->resaving) {
+            return true;
+        }
         return false;
     }
 
