@@ -88,6 +88,9 @@ class ContextCache
         if ($element->resaving) {
             return true;
         }
+        if ($element instanceof Asset && $element->getScenario() === Asset::SCENARIO_INDEX) {
+            return true;
+        }
         return false;
     }
 

@@ -49,4 +49,16 @@ final class ContextCacheTest extends TestCase
 
         self::assertTrue(ContextCache::shouldSkipInvalidation($entry));
     }
+
+    public function testSkipsAssetIndexerPass(): void
+    {
+        $asset = $this->createMock(Asset::class);
+        $asset->method('getIsDraft')->willReturn(false);
+        $asset->method('getIsRevision')->willReturn(false);
+        $asset->method('getScenario')->willReturn(Asset::SCENARIO_INDEX);
+        $asset->propagating = false;
+        $asset->resaving = false;
+
+        self::assertTrue(ContextCache::shouldSkipInvalidation($asset));
+    }
 }
